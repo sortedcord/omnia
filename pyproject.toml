@@ -1,0 +1,19 @@
+[project]
+name = "omnia"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Aditya Gupta",email = "mail@adityagupta.dev"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic (>=2.12.5,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "omnia", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
