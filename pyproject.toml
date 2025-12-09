@@ -1,14 +1,19 @@
 [project]
 name = "omnia"
 version = "0.1.0"
-description = ""
+description = "LLM-assisted RPG engine with structured world state, intent driven simulations, and FastAPI/Mongo backend."
 authors = [
     {name = "Aditya Gupta",email = "mail@adityagupta.dev"}
 ]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "pydantic (>=2.12.5,<3.0.0)"
+    "pydantic (>=2.12.5,<3.0.0)",
+    "fastapi (>=0.124.0,<0.125.0)",
+    "uvicorn (>=0.38.0,<0.39.0)",
+    "motor (>=3.7.1,<4.0.0)",
+    "pymongo (>=4.15.5,<5.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)"
 ]
 
 [tool.poetry]
@@ -17,3 +22,10 @@ packages = [{include = "omnia", from = "src"}]
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pre-commit (>=4.5.0,<5.0.0)",
+    "ruff (>=0.14.8,<0.15.0)",
+    "mypy (>=1.19.0,<2.0.0)"
+]

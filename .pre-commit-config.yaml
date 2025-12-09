@@ -1,0 +1,79 @@
+repos:
+  # ------------------------------------------
+  # 1. Ruff: Linting + Formatting
+  # ------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]       # auto-fix issues
+      - id: ruff-format       # apply Ruff's formatter
+
+  # ------------------------------------------
+  # 2. Mypy (Static type checking)
+  # ------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic
+          - types-PyYAML
+          - types-requests
+          - motor
+        args:
+          - --ignore-missing-imports
+          - --install-types
+          - --non-interactive
+
+  # ------------------------------------------
+  # 3. Detect secrets (AWS keys, tokens, etc.)
+  # ------------------------------------------
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.4.0
+  #   hooks:
+  #     - id: detect-secrets
+  #       args: ["--baseline", ".secrets.baseline"]
+
+  # ------------------------------------------
+  # 4. Check for trailing whitespace / EOF issues
+  # ------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+
+  # ------------------------------------------
+  # 5. Prevent committing giant files accidentally
+  # ------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]  # block commits > 1MB
+
+  # ------------------------------------------
+  # 6. Poetry lock consistency
+  # (Ensures lockfile matches pyproject.toml)
+  # ------------------------------------------
+  # - repo: https://github.com/python-poetry/poetry
+  #   rev: "1.8.4"
+  #   hooks:
+  #     - id: poetry-lock
+  #       args: ["--check"]
+
+  # ------------------------------------------
+  # 7. Sort imports (optional)
+  # Ruff already handles this, so skip if not needed
+  # ------------------------------------------
+  # - repo: https://github.com/PyCQA/isort
+  #   rev: 5.13.2
+  #   hooks:
+  #     - id: isort
+  #       args: ["--profile=black"]
