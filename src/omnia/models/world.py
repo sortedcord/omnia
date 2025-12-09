@@ -25,7 +25,7 @@ class GlobalTimelineEntry(BaseModel):
     id: str
     timestamp: str
     event: str
-    location: Location
+    location_id: str
     involved_entity_ids: List[str] = []  # List of involved entity IDs
 
 
