@@ -1,22 +1,22 @@
-from omnia.db.client import db
+from omnia.db.client import get_db
 
 
 # Avoid circular imports with delayed access functions
 def characters():
-    return db["characters"]
+    return get_db()["characters"]
 
 
 def locations():
-    return db["locations"]
+    return get_db()["locations"]
 
 
 def items():
-    return db["items"]
+    return get_db()["items"]
 
 
 def quests():
-    return db["quests"]
+    return get_db()["quests"]
 
 
 def world():
-    return db["world"]
+    return get_db()["world"]
