@@ -5,5 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1"
   }
 }

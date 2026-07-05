@@ -58,6 +58,10 @@ export class Attribute {
       this.allowedEntities.delete(objectId);
     }
   }
+
+  getAllowedEntities(): Set<string> {
+    return new Set(this.allowedEntities);
+  }
 }
 
 export interface IAttribute {
@@ -73,8 +77,12 @@ export interface IAttribute {
 }
 
 export abstract class AttributableObject implements IAttribute {
-  readonly id: string = crypto.randomUUID();
+  readonly id: string;
   readonly attributes: Map<string, Attribute> = new Map<string, Attribute>();
+
+  constructor(id?: string) {
+    this.id = id ?? crypto.randomUUID();
+  }
 
   addAttribute(
     name: string,
