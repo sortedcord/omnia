@@ -5,6 +5,9 @@
   "description": "",
   "scripts": {
     "build": "tsc -b",
+    "build:web": "pnpm --filter landing build",
+    "build:all": "pnpm build && pnpm build:web",
+    "dev:web": "pnpm --filter landing dev",
     "clean": "git clean -xfd",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
