@@ -29,7 +29,7 @@ export class LLMValidator {
     }
 
     // 1. Serialize the objective world state for the LLM
-    const serializedWorld = this.serializeWorldState(worldState);
+    const serializedWorld = worldState.serialize();
 
     // 2. Build the prompts
     const systemPrompt = `
@@ -74,39 +74,5 @@ Decide if the proposed action is logically valid and physically possible.
     }
 
     return response.data;
-  }
-
-  private serializeWorldState(worldState: WorldState): string {
-    const lines: string[] = [];
-
-    // Serialize world attributes
-    if (worldState.attributes.size > 0) {
-      lines.push("World Attributes:");
-      for (const [name, attr] of worldState.attributes.entries()) {
-        lines.push(
-          `  - ${name}: ${attr.getValue()} (Visibility: ${attr.getVisibility()})`,
-        );
-      }
-    }
-
-    // Serialize entities and their attributes
-    lines.push("Entities:");
-    for (const entity of worldState.entities.values()) {
-      lines.push(`  - Entity [ID: ${entity.id}]:`);
-      if (entity.attributes.size > 0) {
-        for (const [name, attr] of entity.attributes.entries()) {
-          const aclList = Array.from(attr.getAllowedEntities());
-          const aclStr =
-            aclList.length > 0 ? ` (Visible to: ${aclList.join(", ")})` : "";
-          lines.push(
-            `      * ${name}: ${attr.getValue()} (Visibility: ${attr.getVisibility()})${aclStr}`,
-          );
-        }
-      } else {
-        lines.push("      * (No attributes)");
-      }
-    }
-
-    return lines.join("\n");
   }
 }

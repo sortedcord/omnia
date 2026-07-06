@@ -112,4 +112,14 @@ export abstract class AttributableObject implements IAttribute {
       attr.hasAccess(viewerId),
     );
   }
+
+  serialize(): string {
+    const lines: string[] = [];
+    for (const [name, attr] of this.attributes.entries()) {
+      const aclList = Array.from(attr.getAllowedEntities());
+      const aclStr = aclList.length > 0 ? ` (Visible to: ${aclList.join(", ")})` : "";
+      lines.push(`* ${name}: ${attr.getValue()} (Visibility: ${attr.getVisibility()})${aclStr}`);
+    }
+    return lines.join("\n");
+  }
 }

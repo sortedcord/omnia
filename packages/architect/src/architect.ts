@@ -1,5 +1,5 @@
 import { WorldState } from "@omnia/core";
-import { LLMValidator, ValidationResult } from "./llmValidator.js";
+import { LLMValidator, ValidationResult } from "./llm-validator.js";
 import { ILLMProvider } from "@omnia/llm";
 
 export class Architect {

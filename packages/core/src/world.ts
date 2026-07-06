@@ -27,4 +27,33 @@ export class WorldState extends AttributableObject {
   getEntity(id: string): Entity | undefined {
     return this.entities.get(id);
   }
+
+  override serialize(): string {
+    const lines: string[] = [];
+
+    // 1. Serialize self attributes (world attributes)
+    const selfSerialized = super.serialize();
+    if (selfSerialized) {
+      lines.push("World Attributes:");
+      lines.push(selfSerialized.split("\n").map(l => "  " + l).join("\n"));
+    }
+
+    // 2. Serialize entities
+    lines.push("Entities:");
+    if (this.entities.size > 0) {
+      for (const entity of this.entities.values()) {
+        lines.push(`  - Entity [ID: ${entity.id}]:`);
+        const entitySerialized = entity.serialize();
+        if (entitySerialized) {
+          lines.push(entitySerialized.split("\n").map(l => "      " + l).join("\n"));
+        } else {
+          lines.push("      * (No attributes)");
+        }
+      }
+    } else {
+      lines.push("  (No entities)");
+    }
+
+    return lines.join("\n");
+  }
 }
