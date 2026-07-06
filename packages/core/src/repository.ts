@@ -9,6 +9,8 @@ export class SQLiteRepository {
 
   constructor(db: Database.Database) {
     this.db = db;
+    // Enable foreign keys for cascading deletes
+    this.db.exec("PRAGMA foreign_keys = ON;");
     this.initializeSchema();
   }
 

@@ -7,8 +7,6 @@ const DB_PATH = path.resolve("/home/sortedcord/Projects/omnia_umbrella/omnia/omn
 
 function getRepo() {
   const db = new Database(DB_PATH);
-  // Enable foreign keys
-  db.exec("PRAGMA foreign_keys = ON;");
   return { repo: new SQLiteRepository(db), db };
 }
 
