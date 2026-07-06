@@ -73,7 +73,7 @@ export interface IAttribute {
     value: string,
     visibility: AttributeVisibility,
   ): void;
-  getVisibileAttributesFor(viewerId: string): Attribute[];
+  getVisibleAttributesFor(viewerId: string): Attribute[];
 }
 
 export abstract class AttributableObject implements IAttribute {
@@ -107,7 +107,7 @@ export abstract class AttributableObject implements IAttribute {
     this.attributes.delete(name);
   }
 
-  getVisibileAttributesFor(viewerId: string): Attribute[] {
+  getVisibleAttributesFor(viewerId: string): Attribute[] {
     return Array.from(this.attributes.values()).filter((attr) =>
       attr.hasAccess(viewerId),
     );

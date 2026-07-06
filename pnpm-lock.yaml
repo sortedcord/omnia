@@ -251,7 +251,11 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  cli: {}
+  cli:
+    dependencies:
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
 
   content/scenario-builder:
     dependencies:

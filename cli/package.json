@@ -5,5 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
   }
 }
