@@ -7,6 +7,8 @@
     ".": "./dist/index.js"
   },
   "dependencies": {
+    "@langchain/google-genai": "^2.2.0",
+    "@types/node": "^26.1.0",
     "better-sqlite3": "^12.11.1"
   }
 }

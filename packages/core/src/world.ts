@@ -1,5 +1,6 @@
 import { AttributableObject } from "./attribute.js";
 import { Entity } from "./entity.js";
+import { WorldClock } from "./clock.js";
 
 export class WorldState extends AttributableObject {
   /**
@@ -7,9 +8,11 @@ export class WorldState extends AttributableObject {
    * Universe's current state (distinct from how it started)
    */
   readonly entities: Map<string, Entity> = new Map();
+  readonly clock: WorldClock;
 
-  constructor(id?: string) {
+  constructor(id?: string, startTime?: Date) {
     super(id);
+    this.clock = new WorldClock(startTime);
   }
 
   addEntity(entity: Entity): void {
