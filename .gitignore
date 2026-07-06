@@ -22,3 +22,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Add database
+omnia.db
