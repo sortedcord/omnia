@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WorldState } from "@omnia/core";
+import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 
 export const TimeDeltaSchema = z.object({
@@ -41,7 +41,7 @@ Return a structured JSON object containing:
 === CURRENT WORLD STATE ===
 Current Time: ${worldState.clock.get().toISOString()}
 World Details:
-${worldState.serialize()}
+${serializeObjectiveWorldState(worldState)}
 
 === ACTION ===
 Actor ID: ${actorId}

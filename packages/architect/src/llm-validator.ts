@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WorldState } from "@omnia/core";
+import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 
 export const ValidationResultSchema = z.object({
@@ -29,7 +29,7 @@ export class LLMValidator {
     }
 
     // 1. Serialize the objective world state for the LLM
-    const serializedWorld = worldState.serialize();
+    const serializedWorld = serializeObjectiveWorldState(worldState);
 
     // 2. Build the prompts
     const systemPrompt = `

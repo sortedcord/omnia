@@ -1,4 +1,4 @@
-import { WorldState } from "@omnia/core";
+import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 import { IntentSequence, IntentSequenceSchema } from "./intent.js";
 
@@ -47,7 +47,7 @@ Rules:
 ${entityIds.length > 0 ? entityIds.join(", ") : "(No entities)"}
 
 === WORLD STATE ===
-${worldState.serialize()}
+${serializeObjectiveWorldState(worldState)}
 
 === ACTOR ===
 Actor ID: ${actorId}

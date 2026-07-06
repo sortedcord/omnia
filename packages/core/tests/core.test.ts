@@ -8,6 +8,8 @@ import {
   WorldClock,
   WorldState,
   SQLiteRepository,
+  serializeAttributes,
+  serializeObjectiveWorldState,
 } from "@omnia/core";
 
 // A concrete implementation of AttributableObject for testing
@@ -171,18 +173,18 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
   });
 });
 
-describe("Serializer Unit Tests (Tier 1)", () => {
-  test("AttributableObject serialization", () => {
+describe("Serializer & serializeObjectiveWorldState Unit Tests (Tier 1)", () => {
+  test("serializeAttributes utility", () => {
     const obj = new MockAttributable("obj-1");
     obj.addAttribute("health", "100", AttributeVisibility.PUBLIC);
     obj.addAttribute("secret", "key-123", AttributeVisibility.PRIVATE, new Set(["alice"]));
 
-    const result = obj.serialize();
+    const result = serializeAttributes(Array.from(obj.attributes.values()));
     expect(result).toContain("* health: 100 (Visibility: PUBLIC)");
     expect(result).toContain("* secret: key-123 (Visibility: PRIVATE) (Visible to: alice)");
   });
 
-  test("WorldState serialization", () => {
+  test("serializeObjectiveWorldState utility", () => {
     const world = new WorldState("world-1");
     world.addAttribute("gravity", "9.8", AttributeVisibility.PUBLIC);
 
@@ -193,7 +195,7 @@ describe("Serializer Unit Tests (Tier 1)", () => {
     const bob = new Entity("bob"); // no attributes
     world.addEntity(bob);
 
-    const result = world.serialize();
+    const result = serializeObjectiveWorldState(world);
     expect(result).toContain("World Attributes:");
     expect(result).toContain("  * gravity: 9.8 (Visibility: PUBLIC)");
     expect(result).toContain("Entities:");

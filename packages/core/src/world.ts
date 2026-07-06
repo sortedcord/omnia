@@ -1,4 +1,4 @@
-import { AttributableObject } from "./attribute.js";
+import { AttributableObject, serializeAttributes } from "./attribute.js";
 import { Entity } from "./entity.js";
 import { WorldClock } from "./clock.js";
 
@@ -27,33 +27,40 @@ export class WorldState extends AttributableObject {
   getEntity(id: string): Entity | undefined {
     return this.entities.get(id);
   }
+}
 
-  override serialize(): string {
-    const lines: string[] = [];
+/**
+ * Objective world state serializer for system LLM tasks.
+ * Bypasses epistemic privacy bounds for system/physics validation.
+ */
+export function serializeObjectiveWorldState(worldState: WorldState): string {
+  const lines: string[] = [];
 
-    // 1. Serialize self attributes (world attributes)
-    const selfSerialized = super.serialize();
-    if (selfSerialized) {
-      lines.push("World Attributes:");
-      lines.push(selfSerialized.split("\n").map(l => "  " + l).join("\n"));
-    }
-
-    // 2. Serialize entities
-    lines.push("Entities:");
-    if (this.entities.size > 0) {
-      for (const entity of this.entities.values()) {
-        lines.push(`  - Entity [ID: ${entity.id}]:`);
-        const entitySerialized = entity.serialize();
-        if (entitySerialized) {
-          lines.push(entitySerialized.split("\n").map(l => "      " + l).join("\n"));
-        } else {
-          lines.push("      * (No attributes)");
-        }
-      }
-    } else {
-      lines.push("  (No entities)");
-    }
-
-    return lines.join("\n");
+  // Serialize world attributes
+  if (worldState.attributes.size > 0) {
+    lines.push("World Attributes:");
+    const worldAttrsStr = serializeAttributes(Array.from(worldState.attributes.values()));
+    lines.push(worldAttrsStr.split("\n").map(l => "  " + l).join("\n"));
   }
+
+  // Serialize entities and their attributes
+  lines.push("Entities:");
+  if (worldState.entities.size > 0) {
+    for (const entity of worldState.entities.values()) {
+      lines.push(`  - Entity [ID: ${entity.id}]:`);
+      if (entity.locationId) {
+        lines.push(`      * Location ID: ${entity.locationId}`);
+      }
+      if (entity.attributes.size > 0) {
+        const entityAttrsStr = serializeAttributes(Array.from(entity.attributes.values()));
+        lines.push(entityAttrsStr.split("\n").map(l => "      " + l).join("\n"));
+      } else {
+        lines.push("      * (No attributes)");
+      }
+    }
+  } else {
+    lines.push("  (No entities)");
+  }
+
+  return lines.join("\n");
 }
