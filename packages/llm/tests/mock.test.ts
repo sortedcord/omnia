@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { z } from "zod";
-import { MockLLMProvider } from "../src/providers/mock.js";
+import { MockLLMProvider } from "@omnia/llm";
 
 describe("MockLLMProvider Unit Tests (Tier 1)", () => {
   test("returns parsed matching data for valid mock response", async () => {
