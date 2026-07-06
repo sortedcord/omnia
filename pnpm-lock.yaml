@@ -321,7 +321,17 @@ importers:
         specifier: ^12.11.1
         version: 12.11.1
 
-  packages/intent: {}
+  packages/intent:
+    dependencies:
+      '@omnia/core':
+        specifier: workspace:*
+        version: link:../core
+      '@omnia/llm':
+        specifier: workspace:*
+        version: link:../llm
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/llm:
     dependencies:
