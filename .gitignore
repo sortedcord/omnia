@@ -25,3 +25,6 @@ Thumbs.db
 
 # Add database
 omnia.db
+
+# Environment Files
+.env
