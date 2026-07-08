@@ -6,5 +6,9 @@ packages:
   - "content/scenario-core"
 allowBuilds:
   better-sqlite3: true
+  esbuild: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@astrojs/telemetry@3.3.3'
+  - astro@7.0.7

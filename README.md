@@ -144,7 +144,7 @@ omnia/
   tests/
     integration/ cross-package tests against a mocked LLM
     evals/       deliberate real-API evaluation runs
-  docs/          living spec: actor.md, architect.md, intents.md, memory.md, testing.md
+  docs/          Astro documentation site (→ web/docs/)
 ```
 
 _The engine core deliberately knows nothing about domain content (stats, traits, genres). Scenarios are plain JSON the loader ingests; what an attribute means is the scenario's business, not the engine's._

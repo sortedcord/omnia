@@ -14,6 +14,7 @@ dist-ssr/
 build/
 coverage/
 .next/
+.astro/
 out/
 *.tsbuildinfo
 
