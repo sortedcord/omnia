@@ -1,0 +1,148 @@
+{
+  "id": "talking-room",
+  "name": "Talking Room",
+  "description": "A scientific experiment where two memory-wiped subjects are placed in a featureless white room to observe their interaction.",
+  "startTime": "2026-07-09T08:00:00.000Z",
+  "world": {
+    "attributes": [
+      {
+        "name": "experiment_codename",
+        "value": "Project Tabula Rasa (Phase 3)",
+        "visibility": "PRIVATE",
+        "allowedEntities": []
+      },
+      {
+        "name": "observation_status",
+        "value": "Active monitoring. Audio and visual feeds online.",
+        "visibility": "PRIVATE",
+        "allowedEntities": []
+      },
+      {
+        "name": "ambient_sound",
+        "value": "A low, barely audible electrical hum.",
+        "visibility": "PUBLIC"
+      }
+    ]
+  },
+  "locations": [
+    {
+      "id": "white-room",
+      "parentId": null,
+      "attributes": [
+        {
+          "name": "description",
+          "value": "A pristine, featureless room with white walls, ceiling, and floor. There are no visible doors, windows, seams, or vents.",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "lighting",
+          "value": "Bright, uniform illumination casting no shadows.",
+          "visibility": "PUBLIC"
+        }
+      ],
+      "connections": []
+    }
+  ],
+  "entities": [
+    {
+      "id": "subject-alpha",
+      "locationId": "white-room",
+      "attributes": [
+        {
+          "name": "name",
+          "value": "Subject Alpha",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "appearance",
+          "value": "A tall human with short dark hair and alert eyes, standing near the center of the room.",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "clothing",
+          "value": "A clean, sterile grey jumpsuit with 'Alpha' embroidered in black lettering on the chest pocket.",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "knowledge",
+          "value": "I woke up here. I know my name is Alpha. I know I agreed to participate in a paid scientific experiment, but my memories of who I was or my life before this room are gone.",
+          "visibility": "PRIVATE",
+          "allowedEntities": ["subject-alpha"]
+        },
+        {
+          "name": "neural_erasure_dose",
+          "value": "150mg Compound-TR9",
+          "visibility": "PRIVATE",
+          "allowedEntities": []
+        }
+      ],
+      "aliases": {
+        "subject-beta": "the person in the Beta jumpsuit"
+      },
+      "initialMemories": [
+        {
+          "id": "alpha-wake",
+          "timestamp": "2026-07-09T07:58:00.000Z",
+          "locationId": "white-room",
+          "intent": {
+            "type": "action",
+            "originalText": "I woke up on the floor. I stood up and looked around the white room, realizing my memories were wiped.",
+            "description": "wake up on the cold floor and stand up",
+            "actorId": "subject-alpha",
+            "targetIds": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "subject-beta",
+      "locationId": "white-room",
+      "attributes": [
+        {
+          "name": "name",
+          "value": "Subject Beta",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "appearance",
+          "value": "A medium-build human with long blonde hair tied back, sitting with their back pressed against the white wall.",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "clothing",
+          "value": "A clean, sterile grey jumpsuit with 'Beta' embroidered in black lettering on the chest pocket.",
+          "visibility": "PUBLIC"
+        },
+        {
+          "name": "knowledge",
+          "value": "I remember my name is Beta. I remember signing up for a paid research study. My past memories have been completely erased. I am disoriented.",
+          "visibility": "PRIVATE",
+          "allowedEntities": ["subject-beta"]
+        },
+        {
+          "name": "neural_erasure_dose",
+          "value": "150mg Compound-TR9",
+          "visibility": "PRIVATE",
+          "allowedEntities": []
+        }
+      ],
+      "aliases": {
+        "subject-alpha": "the person in the Alpha jumpsuit"
+      },
+      "initialMemories": [
+        {
+          "id": "beta-wake",
+          "timestamp": "2026-07-09T07:58:30.000Z",
+          "locationId": "white-room",
+          "intent": {
+            "type": "action",
+            "originalText": "I opened my eyes, sitting against the wall. I rubbed my temples, trying to remember how I got here.",
+            "description": "wake up sitting against the wall and rub temples",
+            "actorId": "subject-beta",
+            "targetIds": []
+          }
+        }
+      ]
+    }
+  ]
+}
