@@ -24,9 +24,9 @@ export class ScenarioLoader {
     // 2. Instantiate running WorldState using the target instance ID
     const world = new WorldState(targetWorldId, new Date(scenario.startTime));
     
-    // Seed world-level attributes
-    world.addAttribute("name", scenario.name, AttributeVisibility.PUBLIC);
-    world.addAttribute("description", scenario.description, AttributeVisibility.PUBLIC);
+    // Seed world-level attributes as system-only (private, empty ACL)
+    world.addAttribute("name", scenario.name, AttributeVisibility.PRIVATE, new Set());
+    world.addAttribute("description", scenario.description, AttributeVisibility.PRIVATE, new Set());
     
     if (scenario.world?.attributes) {
       for (const attr of scenario.world.attributes) {

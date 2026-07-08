@@ -7,6 +7,15 @@
     ".": "./dist/index.js"
   },
   "dependencies": {
+    "@omnia/core": "workspace:*",
+    "@omnia/spatial": "workspace:*",
+    "@omnia/memory": "workspace:*",
+    "@omnia/intent": "workspace:*",
+    "@omnia/architect": "workspace:*",
+    "@omnia/actor": "workspace:*",
+    "@omnia/llm": "workspace:*",
+    "@omnia/scenario-core": "workspace:*",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^17.4.2"
   }
 }

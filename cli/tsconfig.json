@@ -5,5 +5,14 @@
     "outDir": "dist"
   },
   "include": ["src"],
-  "references": []
+  "references": [
+    { "path": "../packages/core" },
+    { "path": "../packages/spatial" },
+    { "path": "../packages/memory" },
+    { "path": "../packages/intent" },
+    { "path": "../packages/architect" },
+    { "path": "../packages/actor" },
+    { "path": "../packages/llm" },
+    { "path": "../content/scenario-core" }
+  ]
 }

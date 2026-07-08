@@ -56,8 +56,10 @@ Monologue (`"monologue"`) is the third intent type alongside `dialogue` and `act
   ├─ 1. ActorPromptBuilder.build(entity, worldState)
   │      → system prompt + user context (subjective world + memory + time)
   │
-  ├─ 2. ILLMProvider.generateStructuredResponse({ schema: ActorResponseSchema })
-  │      → { narrativeProse: string }
+  ├─ 2. IActorProseGenerator.generate(entityId, systemPrompt, userContext)
+  │      ├─ LLMActorProseGenerator: queries LLM via generateStructuredResponse
+  │      └─ CLIProseGenerator: prompts human player via CLI / readline interface
+  │      → narrativeProse: string
   │
   ├─ 3. IntentDecoder.decode(worldState, actorId, prose)
   │      → IntentSequence (dialogue | action | monologue intents)

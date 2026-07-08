@@ -16,7 +16,8 @@
     "watch": "tsc -b --watch",
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
-    "test:evals": "vitest run --project evals"
+    "test:evals": "vitest run --project evals",
+    "play": "node cli/dist/index.js"
   },
   "keywords": [],
   "author": "",

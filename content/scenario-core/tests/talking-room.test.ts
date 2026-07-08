@@ -36,6 +36,9 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     const world = coreRepo.loadWorldState(worldInstanceId);
     expect(world).not.toBeNull();
     expect(world!.attributes.get("name")?.getValue()).toBe("Talking Room");
+    expect(world!.attributes.get("name")?.visibility).toBe("PRIVATE");
+    expect(world!.attributes.get("description")?.getValue()).toBe(scenarioJson.description);
+    expect(world!.attributes.get("description")?.visibility).toBe("PRIVATE");
     expect(world!.attributes.get("experiment_codename")?.getValue()).toBe("Project Tabula Rasa (Phase 3)");
     expect(world!.attributes.get("experiment_codename")?.visibility).toBe("PRIVATE");
     expect(world!.attributes.get("experiment_codename")?.getAllowedEntities()).toHaveLength(0); // System only!
@@ -47,38 +50,47 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     expect(locations[0].attributes.get("description")?.getValue()).toContain("A pristine, featureless room");
 
     // 6. Assert entities and their private attributes / allowedEntities
-    const alpha = world!.getEntity("subject-alpha");
+    const alphaId = "7c9b83b3-8cfb-4e89-8d77-626a5757d591";
+    const betaId = "bf3f29d2-cf11-4b11-9a99-b13c126d400e";
+
+    const alpha = world!.getEntity(alphaId);
     expect(alpha).toBeDefined();
     expect(alpha!.locationId).toBe("white-room");
-    expect(alpha!.attributes.get("name")?.getValue()).toBe("Subject Alpha");
+    
+    // Name visibility check
+    const alphaName = alpha!.attributes.get("name")!;
+    expect(alphaName.getValue()).toBe("Bob");
+    expect(alphaName.visibility).toBe("PRIVATE");
+    expect(alphaName.hasAccess(alphaId)).toBe(true);
+    expect(alphaName.hasAccess(betaId)).toBe(false);
     
     // Check private knowledge attribute visibility
     const alphaKnowledge = alpha!.attributes.get("knowledge")!;
     expect(alphaKnowledge.visibility).toBe("PRIVATE");
-    expect(alphaKnowledge.hasAccess("subject-alpha")).toBe(true);
-    expect(alphaKnowledge.hasAccess("subject-beta")).toBe(false);
+    expect(alphaKnowledge.hasAccess(alphaId)).toBe(true);
+    expect(alphaKnowledge.hasAccess(betaId)).toBe(false);
 
     // Check system-only attribute (neural_erasure_dose)
     const alphaDose = alpha!.attributes.get("neural_erasure_dose")!;
     expect(alphaDose.visibility).toBe("PRIVATE");
-    expect(alphaDose.hasAccess("subject-alpha")).toBe(false);
-    expect(alphaDose.hasAccess("subject-beta")).toBe(false);
+    expect(alphaDose.hasAccess(alphaId)).toBe(false);
+    expect(alphaDose.hasAccess(betaId)).toBe(false);
 
     // Check subjective aliases
-    expect(alpha!.aliases.get("subject-beta")).toBe("the person in the Beta jumpsuit");
+    expect(alpha!.aliases.get(betaId)).toBe("the person in the Beta jumpsuit");
 
-    const beta = world!.getEntity("subject-beta");
+    const beta = world!.getEntity(betaId);
     expect(beta).toBeDefined();
     expect(beta!.locationId).toBe("white-room");
-    expect(beta!.aliases.get("subject-alpha")).toBe("the person in the Alpha jumpsuit");
+    expect(beta!.aliases.get(alphaId)).toBe("the person in the Alpha jumpsuit");
 
     // 7. Assert initial pre-seeded memories
-    const alphaMemories = bufferRepo.listForOwner("subject-alpha");
+    const alphaMemories = bufferRepo.listForOwner(alphaId);
     expect(alphaMemories).toHaveLength(1);
     expect(alphaMemories[0].id).toBe("alpha-wake");
     expect(alphaMemories[0].intent.description).toBe("wake up on the cold floor and stand up");
 
-    const betaMemories = bufferRepo.listForOwner("subject-beta");
+    const betaMemories = bufferRepo.listForOwner(betaId);
     expect(betaMemories).toHaveLength(1);
     expect(betaMemories[0].id).toBe("beta-wake");
     expect(betaMemories[0].intent.description).toBe("wake up sitting against the wall and rub temples");

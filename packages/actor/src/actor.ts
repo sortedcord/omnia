@@ -9,7 +9,38 @@ import {
   IntentDecoder,
   IntentSequence,
 } from "@omnia/intent";
-import { ActorPromptBuilder, ActorResponse, ActorResponseSchema } from "./actor-prompt-builder.js";
+import { ActorPromptBuilder, ActorResponseSchema } from "./actor-prompt-builder.js";
+
+/**
+ * Interface to generate narrative prose for an actor.
+ * Allows switching between LLM generators and human CLI inputs.
+ */
+export interface IActorProseGenerator {
+  generate(entityId: string, systemPrompt: string, userContext: string): Promise<string>;
+}
+
+/**
+ * Default implementation of IActorProseGenerator using an LLM.
+ */
+export class LLMActorProseGenerator implements IActorProseGenerator {
+  constructor(private llmProvider: ILLMProvider) {}
+
+  async generate(entityId: string, systemPrompt: string, userContext: string): Promise<string> {
+    const response = await this.llmProvider.generateStructuredResponse({
+      systemPrompt,
+      userContext,
+      schema: ActorResponseSchema,
+    });
+
+    if (!response.success || !response.data) {
+      throw new Error(
+        `Actor generation failed for entity "${entityId}": ${response.error || "Unknown LLM error"}`,
+      );
+    }
+
+    return response.data.narrativeProse;
+  }
+}
 
 /**
  * Result of a single actor turn.
@@ -35,21 +66,24 @@ export interface ActorTurnResult {
 export class ActorAgent {
   private promptBuilder: ActorPromptBuilder;
   private decoder: IntentDecoder;
+  private generator: IActorProseGenerator;
 
   constructor(
     private llmProvider: ILLMProvider,
     bufferRepo?: BufferRepository,
     memoryLimit?: number,
+    generator?: IActorProseGenerator,
   ) {
     this.promptBuilder = new ActorPromptBuilder(bufferRepo, memoryLimit);
     this.decoder = new IntentDecoder(llmProvider);
+    this.generator = generator ?? new LLMActorProseGenerator(llmProvider);
   }
 
   /**
    * Has the entity produce its next beat of behavior.
    *
    * 1. Builds an epistemically-bounded prompt for the entity.
-   * 2. Asks the LLM for narrative prose.
+   * 2. Asks the generator (LLM or human) for narrative prose.
    * 3. Decodes the prose into a structured IntentSequence.
    */
   async act(
@@ -61,27 +95,20 @@ export class ActorAgent {
       entity,
     );
 
-    const response = await this.llmProvider.generateStructuredResponse({
+    const narrativeProse = await this.generator.generate(
+      entity.id,
       systemPrompt,
       userContext,
-      schema: ActorResponseSchema,
-    });
+    );
 
-    if (!response.success || !response.data) {
-      throw new Error(
-        `Actor generation failed for entity "${entity.id}": ${response.error || "Unknown LLM error"}`,
-      );
-    }
-
-    const prose: ActorResponse = response.data;
     const intents = await this.decoder.decode(
       worldState,
       entity.id,
-      prose.narrativeProse,
+      narrativeProse,
     );
 
     return {
-      narrativeProse: prose.narrativeProse,
+      narrativeProse,
       intents,
     };
   }
