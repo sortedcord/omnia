@@ -297,6 +297,24 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/actor:
+    dependencies:
+      '@omnia/core':
+        specifier: workspace:*
+        version: link:../core
+      '@omnia/intent':
+        specifier: workspace:*
+        version: link:../intent
+      '@omnia/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@omnia/memory':
+        specifier: workspace:*
+        version: link:../memory
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/architect:
     dependencies:
       '@omnia/core':

@@ -31,11 +31,26 @@ export class Architect {
   /**
    * Processes, validates, generates deltas, applies them to the world state,
    * and persists the changes to the database.
+   *
+   * "monologue" intents are internal thoughts — they bypass validation and
+   * time-delta generation entirely: the clock does not advance, the world
+   * state is not mutated or persisted. The caller is responsible for writing
+   * the monologue to the actor's memory buffer.
    */
   async processIntent(
     worldState: WorldState,
     intent: Intent,
   ): Promise<ProcessResult> {
+    // 0. Monologue intents are purely internal — short-circuit before any
+    // validation or world mutation.
+    if (intent.type === "monologue") {
+      return {
+        isValid: true,
+        reason: "Monologue intent bypasses validation (internal thought, not perceivable).",
+        timeDelta: { minutesToAdvance: 0, explanation: "Internal thought — no time elapsed." },
+      };
+    }
+
     // 1. Validate the intent action
     const validation = await this.validateIntent(worldState, intent);
     if (!validation.isValid) {

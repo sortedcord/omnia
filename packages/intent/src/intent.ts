@@ -4,8 +4,11 @@ import { z } from "zod";
  * Intent types as classified by the Intent Decoder.
  * - "dialogue": Speech or conversation directed at another entity.
  * - "action": A physical or logical action performed in the world.
+ * - "monologue": An inner thought or internal monologue. Not perceivable by
+ *   any other entity. Bypasses the Architect/validators entirely and is
+ *   written directly to the actor's memory buffer with no outcome.
  */
-export const IntentTypeSchema = z.enum(["dialogue", "action"]);
+export const IntentTypeSchema = z.enum(["dialogue", "action", "monologue"]);
 export type IntentType = z.infer<typeof IntentTypeSchema>;
 
 /**
@@ -26,7 +29,8 @@ export const IntentSchema = z.object({
 
   /**
    * Entity IDs of the receiving parties (e.g., who is being spoken to,
-   * what object is being interacted with).
+   * what object is being interacted with). Always an empty array for
+   * "monologue" intents, since they are not perceivable by anyone.
    */
   targetIds: z.array(z.string()),
 });

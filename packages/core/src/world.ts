@@ -1,4 +1,4 @@
-import { AttributableObject, serializeAttributes } from "./attribute.js";
+import { AttributableObject, Attribute, serializeAttributes } from "./attribute.js";
 import { Entity } from "./entity.js";
 import { WorldClock } from "./clock.js";
 
@@ -60,6 +60,108 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
     }
   } else {
     lines.push("  (No entities)");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Resolves how a viewer subjectively refers to a target entity.
+ * - Self → "you"
+ * - Known (in the viewer's alias map) → the subjective alias
+ * - Unknown → "an unfamiliar figure"
+ *
+ * Mirrors the implementation in @omnia/memory's resolveAlias, inlined here
+ * to avoid a circular dependency (memory depends on core).
+ */
+function resolveAliasViewer(viewer: Entity, targetId: string): string {
+  if (targetId === viewer.id) return "you";
+  return viewer.aliases.get(targetId) ?? "an unfamiliar figure";
+}
+
+/**
+ * Serializes a single attribute the way a viewer perceives it — name and
+ * value only, no visibility/ACL metadata (the viewer already sees only
+ * what they're allowed to see).
+ */
+function serializeVisibleAttributes(attrs: Attribute[]): string {
+  if (attrs.length === 0) return "(No perceivable attributes)";
+  return attrs.map((a) => `* ${a.name}: ${a.getValue()}`).join("\n");
+}
+
+/**
+ * Subjective world-state serializer for actor/agent prompts.
+ *
+ * Epistemic opposite of serializeObjectiveWorldState: renders the world
+ * strictly as it appears to a given viewer entity. Only attributes the
+ * viewer has access to (via Attribute.hasAccess) are shown; system UUIDs
+ * are replaced by subjective aliases ("you", known names, or
+ * "an unfamiliar figure"). Co-located entities (sharing the viewer's
+ * locationId) are included; entities elsewhere are listed only as
+ * presences (name/alias) without their attributes, since the viewer
+ * cannot perceive them in detail without a location model.
+ */
+export function serializeSubjectiveWorldState(
+  worldState: WorldState,
+  viewerId: string,
+): string {
+  const viewer = worldState.getEntity(viewerId);
+  if (!viewer) {
+    return `(Viewer entity "${viewerId}" not found in world state.)`;
+  }
+
+  const lines: string[] = [];
+  const viewerAlias = resolveAliasViewer(viewer, viewerId);
+
+  // --- World attributes (only those the viewer can see) ---
+  const worldVisible = worldState.getVisibleAttributesFor(viewerId);
+  if (worldVisible.length > 0) {
+    lines.push("World (as you know it):");
+    lines.push(serializeVisibleAttributes(worldVisible).split("\n").map((l) => "  " + l).join("\n"));
+  }
+
+  // --- Self ---
+  lines.push(`Self (${viewerAlias}):`);
+  const selfVisible = viewer.getVisibleAttributesFor(viewerId);
+  lines.push(serializeVisibleAttributes(selfVisible).split("\n").map((l) => "  " + l).join("\n"));
+
+  // --- Location / perceived entities ---
+  lines.push("What you perceive around you:");
+  if (viewer.locationId) {
+    lines.push(`  You are at location: ${viewer.locationId}`);
+  } else {
+    lines.push("  You are not located anywhere in particular.");
+  }
+
+  const coLocated: Entity[] = [];
+  const elsewhere: Entity[] = [];
+  for (const e of worldState.entities.values()) {
+    if (e.id === viewerId) continue;
+    if (e.locationId !== null && e.locationId === viewer.locationId) {
+      coLocated.push(e);
+    } else {
+      elsewhere.push(e);
+    }
+  }
+
+  if (coLocated.length > 0) {
+    lines.push("  Entities present with you:");
+    for (const e of coLocated) {
+      const alias = resolveAliasViewer(viewer, e.id);
+      lines.push(`    - ${alias} (ID: ${e.id}):`);
+      const eVisible = e.getVisibleAttributesFor(viewerId);
+      lines.push(serializeVisibleAttributes(eVisible).split("\n").map((l) => "      " + l).join("\n"));
+    }
+  } else {
+    lines.push("  You are alone here.");
+  }
+
+  if (elsewhere.length > 0) {
+    lines.push("  Other presences you are aware of (elsewhere):");
+    for (const e of elsewhere) {
+      const alias = resolveAliasViewer(viewer, e.id);
+      lines.push(`    - ${alias} (ID: ${e.id}) [elsewhere]`);
+    }
   }
 
   return lines.join("\n");

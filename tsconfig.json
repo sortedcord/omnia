@@ -10,6 +10,7 @@
     { "path": "./packages/memory" },
     { "path": "./packages/spatial" },
     { "path": "./packages/llm" },
+    { "path": "./packages/actor" },
     { "path": "./cli" }
   ]
 }

@@ -10,7 +10,7 @@ export class IntentDecoder {
    *
    * Responsibilities (from docs/intents.md):
    * - Split prose into multiple intents when applicable.
-   * - Classify each intent as "dialogue" or "action".
+   * - Classify each intent as "dialogue", "action", or "monologue".
    * - Parse narrative text into structured JSON with minimal information loss.
    * - Contextually resolve receiving parties (targets).
    */
@@ -35,10 +35,11 @@ For each intent you must:
 1. Classify its type:
    - "dialogue": Any speech, conversation, or verbal communication directed at another entity.
    - "action": Any physical or logical action performed in the world (e.g., moving, picking up, opening, looking).
+   - "monologue": An inner thought, reflection, or internal monologue. This is purely internal — not spoken aloud, not perceivable by any other entity, and not a physical action. Use this for any prose depicting the character thinking, reflecting, feeling, or narrating to themselves internally.
 2. Extract the original text fragment from the prose that corresponds to this intent.
 3. Write a concise, structured description of the intent (what is being done or said). Include as much detail about the action as possible that was extracted from the narrative prose. Do not make up qualities.
 4. Identify the actorId (the entity performing the intent — this will always be "${actorId}").
-5. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" and "ACTOR ALIASES" mapping to resolve any subjective names, descriptions, or nicknames used in the prose to their correct system entity IDs. If no specific target, use an empty array.
+5. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" and "ACTOR ALIASES" mapping to resolve any subjective names, descriptions, or nicknames used in the prose to their correct system entity IDs. If no specific target, use an empty array. For "monologue" intents, targetIds must always be an empty array.
 
 Rules:
 - Preserve the chronological order of intents as they appear in the prose.
