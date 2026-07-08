@@ -4,6 +4,8 @@ import { AttributableObject, AttributeVisibility } from "./attribute.js";
 import { Entity } from "./entity.js";
 import { WorldState } from "./world.js";
 
+class GenericObject extends AttributableObject {}
+
 export class SQLiteRepository {
   private db: Database.Database;
 
@@ -195,6 +197,9 @@ export class SQLiteRepository {
       for (const entity of worldState.entities.values()) {
         this.saveEntity(entity, worldState.id);
       }
+      for (const location of worldState.locations.values()) {
+        this.saveLocation(location, worldState.id);
+      }
     });
     saveWorldTx();
   }
@@ -287,6 +292,25 @@ export class SQLiteRepository {
     const startTime = objRow.clock_iso ? new Date(objRow.clock_iso) : undefined;
     const worldState = new WorldState(id, startTime);
     this.reconstituteAttributes(worldState);
+
+    // Reconstitute all locations belonging to this world
+    const locationRows = this.db
+      .prepare(
+        `
+      SELECT id, location_id, connections_json FROM objects WHERE type = 'location' AND world_id = ?
+    `,
+      )
+      .all(id) as { id: string; location_id: string | null; connections_json: string | null }[];
+
+    for (const row of locationRows) {
+      const loc = new GenericObject(row.id);
+      (loc as { parentId?: string | null }).parentId = row.location_id;
+      if (row.connections_json) {
+        (loc as { connections?: unknown[] }).connections = JSON.parse(row.connections_json);
+      }
+      this.reconstituteAttributes(loc);
+      worldState.addLocation(loc);
+    }
 
     // Reconstitute all entities belonging to this world
     const entityRows = this.db

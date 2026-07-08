@@ -8,6 +8,7 @@ export class WorldState extends AttributableObject {
    * Universe's current state (distinct from how it started)
    */
   readonly entities: Map<string, Entity> = new Map();
+  readonly locations: Map<string, AttributableObject> = new Map();
   readonly clock: WorldClock;
 
   constructor(id?: string, startTime?: Date) {
@@ -27,6 +28,19 @@ export class WorldState extends AttributableObject {
   getEntity(id: string): Entity | undefined {
     return this.entities.get(id);
   }
+
+  addLocation(location: AttributableObject): void {
+    if (this.locations.has(location.id)) {
+      throw new Error(
+        `Location with ID ${location.id} already exists in the world`,
+      );
+    }
+    this.locations.set(location.id, location);
+  }
+
+  getLocation(id: string): AttributableObject | undefined {
+    return this.locations.get(id);
+  }
 }
 
 /**
@@ -41,6 +55,45 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
     lines.push("World Attributes:");
     const worldAttrsStr = serializeAttributes(Array.from(worldState.attributes.values()));
     lines.push(worldAttrsStr.split("\n").map(l => "  " + l).join("\n"));
+  }
+
+  // Serialize locations and their attributes/portals
+  lines.push("Locations:");
+  if (worldState.locations.size > 0) {
+    for (const loc of worldState.locations.values()) {
+      lines.push(`  - Location [ID: ${loc.id}]:`);
+      
+      const parentId = (loc as { parentId?: string | null }).parentId;
+      if (parentId) {
+        lines.push(`      * Parent Location ID: ${parentId}`);
+      }
+      
+      if (loc.attributes.size > 0) {
+        const locAttrsStr = serializeAttributes(Array.from(loc.attributes.values()));
+        lines.push(locAttrsStr.split("\n").map(l => "      " + l).join("\n"));
+      } else {
+        lines.push("      * (No attributes)");
+      }
+
+      const connections = (loc as { connections?: unknown[] }).connections as {
+        targetId: string;
+        portalName?: string;
+        portalStateDescriptor?: string;
+        visionProp: number;
+        soundProp: number;
+        bidirectional: boolean;
+      }[] | undefined;
+
+      if (connections && connections.length > 0) {
+        lines.push("      * Connections:");
+        for (const conn of connections) {
+          const portalStr = conn.portalName ? ` via ${conn.portalName} (${conn.portalStateDescriptor || "normal"})` : "";
+          lines.push(`          -> To: ${conn.targetId}${portalStr} (Vision: ${conn.visionProp}, Sound: ${conn.soundProp})`);
+        }
+      }
+    }
+  } else {
+    lines.push("  (No locations)");
   }
 
   // Serialize entities and their attributes
@@ -129,6 +182,14 @@ export function serializeSubjectiveWorldState(
   lines.push("What you perceive around you:");
   if (viewer.locationId) {
     lines.push(`  You are at location: ${viewer.locationId}`);
+    const location = worldState.getLocation(viewer.locationId);
+    if (location) {
+      const locVisible = location.getVisibleAttributesFor(viewerId);
+      if (locVisible.length > 0) {
+        lines.push("    Location attributes:");
+        lines.push(serializeVisibleAttributes(locVisible).split("\n").map((l) => "      " + l).join("\n"));
+      }
+    }
   } else {
     lines.push("  You are not located anywhere in particular.");
   }

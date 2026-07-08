@@ -72,6 +72,7 @@ export class ScenarioLoader {
         }
 
         // Save location record linked to the world instance
+        world.addLocation(location);
         this.coreRepo.saveLocation(location, world.id);
       }
     }
@@ -102,6 +103,7 @@ export class ScenarioLoader {
         }
 
         // Save entity record linked to the world instance
+        world.addEntity(entity);
         this.coreRepo.saveEntity(entity, world.id);
 
         // Seed initial memory buffer history

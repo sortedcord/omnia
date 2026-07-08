@@ -84,6 +84,21 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     expect(beta!.locationId).toBe("white-room");
     expect(beta!.aliases.get(alphaId)).toBe("the person in the Alpha jumpsuit");
 
+    // Verify subjective world state serializes the location attributes (epistemic inclusion)
+    const { serializeSubjectiveWorldState } = await import("@omnia/core");
+    const subjectiveState = serializeSubjectiveWorldState(world!, alphaId);
+    expect(subjectiveState).toContain("You are at location: white-room");
+    expect(subjectiveState).toContain("Location attributes:");
+    expect(subjectiveState).toContain("description: A pristine, featureless room");
+    expect(subjectiveState).toContain("lighting: Bright, uniform illumination");
+
+    // Verify objective world state serializes locations (physics awareness)
+    const { serializeObjectiveWorldState } = await import("@omnia/core");
+    const objectiveState = serializeObjectiveWorldState(world!);
+    expect(objectiveState).toContain("Locations:");
+    expect(objectiveState).toContain("- Location [ID: white-room]:");
+    expect(objectiveState).toContain("description: A pristine, featureless room");
+
     // 7. Assert initial pre-seeded memories
     const alphaMemories = bufferRepo.listForOwner(alphaId);
     expect(alphaMemories).toHaveLength(1);
