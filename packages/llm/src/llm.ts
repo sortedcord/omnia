@@ -36,3 +36,11 @@ export interface ILLMProvider {
   ): Promise<LLMResponse<z.infer<T>>>;
   lastCalls?: LLMCallRecord[];
 }
+
+export interface LLMProviderInstance {
+  id: string;
+  name: string;
+  providerName: string;
+  apiKey: string;
+  isActive: boolean;
+}

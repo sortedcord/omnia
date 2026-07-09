@@ -25,8 +25,9 @@ import {
   IActorProseGenerator,
   buildBufferEntryForIntent,
 } from "@omnia/actor";
-import { GeminiProvider } from "@omnia/llm";
+import { GeminiProvider, ILLMProvider, MockLLMProvider } from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
+import { ProviderManager } from "./provider-manager";
 
 import type {
   IntentInfo,
@@ -66,6 +67,7 @@ interface SavedState {
   waitingEntity?: WaitingContext;
   aliasDoneForTurn: boolean;
   log: LogEntry[];
+  providerMappings: Record<string, string>;
 }
 
 function loadSessionState(db: Database.Database, id: string): SavedState | null {
@@ -96,7 +98,10 @@ interface SimSession {
   entities: EntityInfo[];
   playerEntityId: string | undefined;
   entityIndex: number;
-  llmProvider: GeminiProvider;
+  actorProvider: ILLMProvider;
+  validatorProvider: ILLMProvider;
+  decoderProvider: ILLMProvider;
+  timedeltaProvider: ILLMProvider;
   architect: Architect;
   aliasGenerator: AliasDeltaGenerator;
   log: LogEntry[];
@@ -104,6 +109,7 @@ interface SimSession {
   error?: string;
   waitingEntity?: WaitingContext;
   aliasDoneForTurn: boolean;
+  providerMappings: Record<string, string>;
 }
 
 class SimulationManager {
@@ -112,9 +118,20 @@ class SimulationManager {
   async create(
     scenarioPath: string,
     playEntityName?: string,
+    providerInstanceId?: string,
   ): Promise<SimSnapshot> {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
+    let activeInstance = providerInstanceId
+      ? ProviderManager.list().find((p) => p.id === providerInstanceId)
+      : ProviderManager.getActive();
+
+    if (!activeInstance) {
+      const envKey = process.env.GOOGLE_API_KEY;
+      if (envKey) {
+        activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey);
+      }
+    }
+
+    if (!activeInstance) {
       return {
         id: "",
         status: "error",
@@ -125,7 +142,7 @@ class SimulationManager {
         entities: [],
         log: [],
         entityIndex: 0,
-        error: "GOOGLE_API_KEY is not set. Add it to your .env file.",
+        error: "No active LLM Provider Instance found. Please configure a key in Settings first.",
       };
     }
 
@@ -202,9 +219,37 @@ class SimulationManager {
       }
     }
 
-    const llmProvider = new GeminiProvider(apiKey);
-    const architect = new Architect(llmProvider, coreRepo);
-    const aliasGenerator = new AliasDeltaGenerator(llmProvider);
+    const list = ProviderManager.list();
+    const active = ProviderManager.getActive() || activeInstance;
+    const mappings = ProviderManager.getMappings();
+
+    const resolveProviderForTask = (task: string): ILLMProvider => {
+      const mappedId = mappings[task];
+      let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
+      if (!inst) {
+        inst = active;
+      }
+
+      const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+      const providerName = inst ? inst.providerName : "google-genai";
+
+      if (providerName === "google-genai") {
+        return new GeminiProvider(key);
+      } else {
+        return new MockLLMProvider([]);
+      }
+    };
+
+    const actorProvider = resolveProviderForTask("actor-prose");
+    const validatorProvider = resolveProviderForTask("llm-validator");
+    const decoderProvider = resolveProviderForTask("intent-decoder");
+    const timedeltaProvider = resolveProviderForTask("timedelta");
+
+    const architect = new Architect(
+      { validator: validatorProvider, timedelta: timedeltaProvider },
+      coreRepo,
+    );
+    const aliasGenerator = new AliasDeltaGenerator(actorProvider);
 
     const session: SimSession = {
       db,
@@ -219,12 +264,16 @@ class SimulationManager {
       entities: entityInfos,
       playerEntityId,
       entityIndex: 0,
-      llmProvider,
+      actorProvider,
+      validatorProvider,
+      decoderProvider,
+      timedeltaProvider,
       architect,
       aliasGenerator,
       log: [],
       status: "running",
       aliasDoneForTurn: false,
+      providerMappings: mappings,
     };
 
     this.sessions.set(id, session);
@@ -300,15 +349,13 @@ class SimulationManager {
       if (!entity) throw new Error(`Player entity "${ctx.entityId}" not found`);
 
       const playerActor = new ActorAgent(
-        session.llmProvider,
+        { actor: session.actorProvider, decoder: session.decoderProvider },
         session.bufferRepo,
         20,
         new FixedProseGenerator(prose),
       );
 
-      const startCallIdx = session.llmProvider.lastCalls.length;
       const result = await playerActor.act(worldState, entity);
-      const endCallIdx = session.llmProvider.lastCalls.length;
 
       const entry: LogEntry = {
         turn: session.turn,
@@ -323,8 +370,8 @@ class SimulationManager {
         },
       };
 
-      if (endCallIdx > startCallIdx) {
-        const call = session.llmProvider.lastCalls[startCallIdx];
+      if (session.decoderProvider.lastCalls && session.decoderProvider.lastCalls.length > 0) {
+        const call = session.decoderProvider.lastCalls[session.decoderProvider.lastCalls.length - 1];
         entry.decoderPrompt = {
           systemPrompt: call.systemPrompt,
           userContext: call.userContext,
@@ -441,10 +488,12 @@ class SimulationManager {
     const entity = worldState.getEntity(info.id);
     if (!entity) throw new Error(`Entity "${info.id}" not found`);
 
-    const actor = new ActorAgent(session.llmProvider, session.bufferRepo, 20);
-    const startCallIdx = session.llmProvider.lastCalls.length;
+    const actor = new ActorAgent(
+      { actor: session.actorProvider, decoder: session.decoderProvider },
+      session.bufferRepo,
+      20,
+    );
     const result = await actor.act(worldState, entity);
-    const endCallIdx = session.llmProvider.lastCalls.length;
 
     const entry: LogEntry = {
       turn: session.turn,
@@ -455,28 +504,22 @@ class SimulationManager {
       timestamp: worldState.clock.get().toISOString(),
     };
 
-    if (endCallIdx - startCallIdx >= 2) {
-      const actorCall = session.llmProvider.lastCalls[startCallIdx];
-      const decoderCall = session.llmProvider.lastCalls[startCallIdx + 1];
-
+    if (session.actorProvider.lastCalls && session.actorProvider.lastCalls.length > 0) {
+      const actorCall = session.actorProvider.lastCalls[session.actorProvider.lastCalls.length - 1];
       entry.rawPrompt = {
         systemPrompt: actorCall.systemPrompt,
         userContext: actorCall.userContext,
       };
       entry.usage = actorCall.usage;
+    }
 
+    if (session.decoderProvider.lastCalls && session.decoderProvider.lastCalls.length > 0) {
+      const decoderCall = session.decoderProvider.lastCalls[session.decoderProvider.lastCalls.length - 1];
       entry.decoderPrompt = {
         systemPrompt: decoderCall.systemPrompt,
         userContext: decoderCall.userContext,
       };
       entry.decoderUsage = decoderCall.usage;
-    } else if (endCallIdx - startCallIdx === 1) {
-      const call = session.llmProvider.lastCalls[startCallIdx];
-      entry.rawPrompt = {
-        systemPrompt: call.systemPrompt,
-        userContext: call.userContext,
-      };
-      entry.usage = call.usage;
     }
 
     for (const intent of result.intents.intents) {
@@ -604,17 +647,47 @@ class SimulationManager {
         return null;
       }
 
-      const apiKey = process.env.GOOGLE_API_KEY;
-      if (!apiKey) {
-        db.close();
-        throw new Error("GOOGLE_API_KEY is not set.");
-      }
+      const list = ProviderManager.list();
+      const active = ProviderManager.getActive();
+      const mappings = state.providerMappings || {};
+
+      const resolveProviderForTask = (task: string): ILLMProvider => {
+        const mappedId = mappings[task];
+        let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
+        if (!inst) {
+          inst = active;
+        }
+        if (!inst) {
+          const envKey = process.env.GOOGLE_API_KEY;
+          if (envKey) {
+            inst = ProviderManager.create("Default (Env)", "google-genai", envKey);
+          }
+        }
+
+        if (!inst) {
+          throw new Error(`No active LLM Provider Instance found for task "${task}". Please configure a key in Settings first.`);
+        }
+
+        if (inst.providerName === "google-genai") {
+          return new GeminiProvider(inst.apiKey);
+        } else {
+          return new MockLLMProvider([]);
+        }
+      };
 
       const coreRepo = new SQLiteRepository(db);
       const bufferRepo = new BufferRepository(db);
-      const llmProvider = new GeminiProvider(apiKey);
-      const architect = new Architect(llmProvider, coreRepo);
-      const aliasGenerator = new AliasDeltaGenerator(llmProvider);
+
+      const actorProvider = resolveProviderForTask("actor-prose");
+      const validatorProvider = resolveProviderForTask("llm-validator");
+      const decoderProvider = resolveProviderForTask("intent-decoder");
+      const timedeltaProvider = resolveProviderForTask("timedelta");
+
+      const architect = new Architect(
+        { validator: validatorProvider, timedelta: timedeltaProvider },
+        coreRepo,
+      );
+      const aliasGenerator = new AliasDeltaGenerator(actorProvider);
 
       const session: SimSession = {
         db,
@@ -629,7 +702,10 @@ class SimulationManager {
         entities: state.entities || [],
         playerEntityId: state.playerEntityId,
         entityIndex: state.entityIndex,
-        llmProvider,
+        actorProvider,
+        validatorProvider,
+        decoderProvider,
+        timedeltaProvider,
         architect,
         aliasGenerator,
         log: state.log || [],
@@ -637,6 +713,7 @@ class SimulationManager {
         error: state.error,
         waitingEntity: state.waitingEntity,
         aliasDoneForTurn: state.aliasDoneForTurn || false,
+        providerMappings: mappings,
       };
 
       this.sessions.set(id, session);
@@ -710,6 +787,7 @@ class SimulationManager {
       waitingEntity: session.waitingEntity,
       aliasDoneForTurn: session.aliasDoneForTurn,
       log: session.log,
+      providerMappings: session.providerMappings,
     };
 
     session.db.prepare(`

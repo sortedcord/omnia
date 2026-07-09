@@ -10,8 +10,10 @@ import {
   getConfigStatus,
   getScenarioEntities,
   deleteSimulation,
+  listProviderInstances,
 } from "@/app/play/actions";
 import type { SimSnapshot } from "@/lib/simulation-types";
+import type { LLMProviderInstance } from "@/lib/provider-manager";
 
 function IntentTag({
   intent,
@@ -304,9 +306,12 @@ export function PlayView() {
   const [availableEntities, setAvailableEntities] = useState<{ id: string; name: string }[]>([]);
   const [selectedEntity, setSelectedEntity] = useState("");
 
-  // Load scenarios on mount
+  const [providerInstances, setProviderInstances] = useState<LLMProviderInstance[]>([]);
+  const [selectedProviderInstance, setSelectedProviderInstance] = useState("");
+
+  // Load scenarios and provider instances on mount
   useEffect(() => {
-    async function loadScenarios() {
+    async function loadScenariosAndProviders() {
       try {
         const configStatus = await getConfigStatus();
         setScenarios(configStatus.availableScenarios);
@@ -316,9 +321,21 @@ export function PlayView() {
       } catch {
         // ignore
       }
+      try {
+        const providersList = await listProviderInstances();
+        setProviderInstances(providersList);
+        const active = providersList.find(p => p.isActive);
+        if (active) {
+          setSelectedProviderInstance(active.id);
+        } else if (providersList.length > 0) {
+          setSelectedProviderInstance(providersList[0].id);
+        }
+      } catch {
+        // ignore
+      }
     }
-    loadScenarios();
-  }, []);
+    loadScenariosAndProviders();
+  }, [snapshot]);
 
   // Fetch entities when selectedScenario changes
   useEffect(() => {
@@ -355,6 +372,7 @@ export function PlayView() {
       const result = await startSimulation({
         scenario: (form.get("scenario") as string) || undefined,
         playEntity: (form.get("playEntity") as string) || undefined,
+        providerInstanceId: selectedProviderInstance || undefined,
       });
 
       if (!result.ok) {
@@ -471,6 +489,25 @@ export function PlayView() {
                       {ent.name}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="llmInstance">LLM Key / Instance</label>
+                <select
+                  id="llmInstance"
+                  value={selectedProviderInstance}
+                  onChange={(e) => setSelectedProviderInstance(e.target.value)}
+                  disabled={providerInstances.length === 0}
+                >
+                  {providerInstances.length === 0 ? (
+                    <option value="">Default (from Env variable)</option>
+                  ) : (
+                    providerInstances.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.providerName}) {p.isActive ? " [Active]" : ""}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
               <button type="submit" disabled={loading}>

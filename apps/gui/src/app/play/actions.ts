@@ -4,6 +4,8 @@ import path from "path";
 import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
+import { ProviderManager } from "@/lib/provider-manager";
+import type { LLMProviderInstance } from "@/lib/provider-manager";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
@@ -30,6 +32,7 @@ type ActionResult =
 export async function startSimulation(input: {
   scenario?: string;
   playEntity?: string;
+  providerInstanceId?: string;
 }): Promise<ActionResult> {
   try {
     const scenarioFile =
@@ -43,6 +46,7 @@ export async function startSimulation(input: {
     const snapshot = await simulationManager.create(
       resolved,
       input.playEntity || undefined,
+      input.providerInstanceId,
     );
 
     if (snapshot.status === "error") {
@@ -228,4 +232,35 @@ export async function deleteSimulation(simId: string): Promise<
       error: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+export async function listProviderInstances(): Promise<LLMProviderInstance[]> {
+  return ProviderManager.list();
+}
+
+export async function createProviderInstance(
+  name: string,
+  providerName: string,
+  apiKey: string,
+): Promise<LLMProviderInstance> {
+  return ProviderManager.create(name, providerName, apiKey);
+}
+
+export async function deleteProviderInstance(id: string): Promise<void> {
+  ProviderManager.delete(id);
+}
+
+export async function setActiveProviderInstance(id: string): Promise<void> {
+  ProviderManager.setActive(id);
+}
+
+export async function getProviderMappings(): Promise<Record<string, string>> {
+  return ProviderManager.getMappings();
+}
+
+export async function setProviderMapping(
+  task: string,
+  providerInstanceId: string,
+): Promise<void> {
+  ProviderManager.setMapping(task, providerInstanceId);
 }

@@ -12,9 +12,23 @@ export class Architect {
   private validator: LLMValidator;
   private timeDeltaGenerator: TimeDeltaGenerator;
 
-  constructor(llmProvider: ILLMProvider, private repo?: SQLiteRepository) {
-    this.validator = new LLMValidator(llmProvider);
-    this.timeDeltaGenerator = new TimeDeltaGenerator(llmProvider);
+  constructor(
+    llmProvider: ILLMProvider | { validator: ILLMProvider; timedelta: ILLMProvider },
+    private repo?: SQLiteRepository,
+  ) {
+    let valProv: ILLMProvider;
+    let timeProv: ILLMProvider;
+
+    if ("validator" in llmProvider && "timedelta" in llmProvider) {
+      valProv = llmProvider.validator;
+      timeProv = llmProvider.timedelta;
+    } else {
+      valProv = llmProvider;
+      timeProv = llmProvider;
+    }
+
+    this.validator = new LLMValidator(valProv);
+    this.timeDeltaGenerator = new TimeDeltaGenerator(timeProv);
   }
 
   /**
