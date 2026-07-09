@@ -3,9 +3,9 @@ import fs from "fs";
 import path from "path";
 import readline from "readline";
 import Database from "better-sqlite3";
-import { SQLiteRepository } from "@omnia/core";
+import { WorldState, SQLiteRepository } from "@omnia/core";
 import { BufferRepository } from "@omnia/memory";
-import { Architect } from "@omnia/architect";
+import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import {
   ActorAgent,
   ActorPromptBuilder,
@@ -27,7 +27,7 @@ class CLIProseGenerator implements IActorProseGenerator {
     console.log(
       "\n================================================================================",
     );
-    console.log(`🎮 YOUR TURN: Playing as character "${entityId}"`);
+    console.log(`YOUR TURN: Playing as character "${entityId}"`);
     console.log(
       "================================================================================",
     );
@@ -55,6 +55,34 @@ class CLIProseGenerator implements IActorProseGenerator {
         },
       );
     });
+  }
+}
+
+/**
+ * Checks for co-located entities who do not have subjective aliases for each other,
+ * and calls the AliasDeltaGenerator to synthesize names based on visible attributes.
+ */
+async function runAliasResolution(
+  worldState: WorldState,
+  aliasGenerator: AliasDeltaGenerator,
+  coreRepo: SQLiteRepository,
+): Promise<void> {
+  const entities = Array.from(worldState.entities.values());
+  for (const viewer of entities) {
+    if (!viewer.locationId) continue;
+
+    for (const target of entities) {
+      if (viewer.id === target.id) continue;
+      if (target.locationId === viewer.locationId) {
+        if (!viewer.aliases.has(target.id)) {
+          const alias = await aliasGenerator.generate(viewer, target);
+          viewer.aliases.set(target.id, alias);
+          console.log(`\n🔍 [Alias Resolved] "${viewer.id}" sees "${target.id}" -> alias: "${alias}"`);
+          // Save the viewer state with the new alias
+          coreRepo.saveEntity(viewer, worldState.id);
+        }
+      }
+    }
   }
 }
 
@@ -114,6 +142,7 @@ async function main() {
 
   const llmProvider = new GeminiProvider(apiKey);
   const architect = new Architect(llmProvider, coreRepo);
+  const aliasGenerator = new AliasDeltaGenerator(llmProvider);
 
   console.log(
     "\n================================================================================",
@@ -146,6 +175,9 @@ async function main() {
       process.exit(1);
     }
 
+    // Auto-resolve aliases for co-located entities who don't know each other yet
+    await runAliasResolution(currentWorldState, aliasGenerator, coreRepo);
+
     const entities = Array.from(currentWorldState.entities.values());
 
     for (const entity of entities) {
@@ -158,13 +190,18 @@ async function main() {
       // Verbose mode: Output the generated prompt builder context before generation
       if (isVerbose) {
         const promptBuilder = new ActorPromptBuilder(bufferRepo, 20);
-        const { systemPrompt, userContext } = promptBuilder.build(currentWorldState, entity);
+        const { systemPrompt, userContext } = promptBuilder.build(
+          currentWorldState,
+          entity,
+        );
         console.log(`\n🔍 [VERBOSE] Assembled Prompts for "${entity.id}":`);
         console.log("\n--- SYSTEM PROMPT ---");
         console.log(systemPrompt);
         console.log("\n--- USER CONTEXT ---");
         console.log(userContext);
-        console.log("--------------------------------------------------------------------------------");
+        console.log(
+          "--------------------------------------------------------------------------------",
+        );
       }
 
       if (!isPlayer) {
@@ -184,7 +221,9 @@ async function main() {
       if (isVerbose) {
         console.log(`\n🔍 [VERBOSE] Decoded Intents from Prose:`);
         console.log(JSON.stringify(turnResult.intents.intents, null, 2));
-        console.log("--------------------------------------------------------------------------------");
+        console.log(
+          "--------------------------------------------------------------------------------",
+        );
       }
 
       // 3. Process each generated intent sequence through physics and memory
@@ -203,12 +242,18 @@ async function main() {
           if (intent.type === "monologue") {
             console.log("  Validation: Bypassed (monologue)");
           } else {
-            console.log(`  Validation Result: isValid = ${outcome.isValid}, reason = "${outcome.reason}"`);
+            console.log(
+              `  Validation Result: isValid = ${outcome.isValid}, reason = "${outcome.reason}"`,
+            );
             if (outcome.timeDelta) {
-              console.log(`  Clock Delta: +${outcome.timeDelta.minutesToAdvance} min (${outcome.timeDelta.explanation})`);
+              console.log(
+                `  Clock Delta: +${outcome.timeDelta.minutesToAdvance} min (${outcome.timeDelta.explanation})`,
+              );
             }
           }
-          console.log("--------------------------------------------------------------------------------");
+          console.log(
+            "--------------------------------------------------------------------------------",
+          );
         }
 
         // Save actor's subjective memory

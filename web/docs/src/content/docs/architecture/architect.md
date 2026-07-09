@@ -65,6 +65,21 @@ Calculates the physical time duration (in minutes) that a validated action takes
   ```
 - **Resolution**: The Architect advances `worldState.clock` by the returned minutes and saves to `SQLiteRepository`.
 
+### Alias Delta Generator
+
+Dynamically synthesizes subjective names/aliases when an entity perceives another entity for the first time:
+
+- **Trigger**: Run automatically during simulation loops for any co-located entities who do not yet have a record in their subjective alias registry.
+- **Epistemic Constraints**: Uses only the target entity's visible public attributes (e.g. appearance, clothing) as context, ensuring private names and details remain hidden from the observer.
+- **Inputs**: The observer (`viewer: Entity`) and the observed (`target: Entity`), along with the target's visible attributes.
+- **Output (Zod Schema)**:
+  ```json
+  {
+    "alias": "the tall silver-haired elf in the green tunic"
+  }
+  ```
+- **Resolution**: Registers the generated descriptive alias to the observer's `aliases` map and persists the entity change to the SQLite database.
+
 ## A Note on Tech Debt
 
 The Architect currently trusts an LLM's judgment about reasonable consequences rather than validating every change against declarative constraints. A general constraint solver is worth building eventually, but building it before anything is playable is foundational perfectionism that produces beautiful architecture and no game.

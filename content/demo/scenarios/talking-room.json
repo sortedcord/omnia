@@ -65,30 +65,21 @@
           "visibility": "PUBLIC"
         },
         {
-          "name": "knowledge",
-          "value": "I woke up here. I know my name is Alpha. I know I agreed to participate in a paid scientific experiment, but my memories of who I was or my life before this room are gone.",
-          "visibility": "PRIVATE",
-          "allowedEntities": ["7c9b83b3-8cfb-4e89-8d77-626a5757d591"]
-        },
-        {
           "name": "neural_erasure_dose",
           "value": "150mg Compound-TR9",
           "visibility": "PRIVATE",
           "allowedEntities": []
         }
       ],
-      "aliases": {
-        "bf3f29d2-cf11-4b11-9a99-b13c126d400e": "the person in the Beta jumpsuit"
-      },
       "initialMemories": [
         {
           "id": "alpha-wake",
           "timestamp": "2026-07-09T07:58:00.000Z",
           "locationId": "white-room",
           "intent": {
-            "type": "action",
-            "originalText": "I woke up on the floor. I stood up and looked around the white room, realizing my memories were wiped.",
-            "description": "wake up on the cold floor and stand up",
+            "type": "monologue",
+            "originalText": "I didn't have a choice. I would have been sent to jail if I hadn't agreed to do this experiement.",
+            "description": "",
             "actorId": "7c9b83b3-8cfb-4e89-8d77-626a5757d591",
             "targetIds": []
           }
@@ -116,21 +107,12 @@
           "visibility": "PUBLIC"
         },
         {
-          "name": "knowledge",
-          "value": "I remember my name is Beta. I remember signing up for a paid research study. My past memories have been completely erased. I am disoriented.",
-          "visibility": "PRIVATE",
-          "allowedEntities": ["bf3f29d2-cf11-4b11-9a99-b13c126d400e"]
-        },
-        {
           "name": "neural_erasure_dose",
           "value": "150mg Compound-TR9",
           "visibility": "PRIVATE",
           "allowedEntities": []
         }
       ],
-      "aliases": {
-        "7c9b83b3-8cfb-4e89-8d77-626a5757d591": "the person in the Alpha jumpsuit"
-      },
       "initialMemories": [
         {
           "id": "beta-wake",
@@ -138,8 +120,8 @@
           "locationId": "white-room",
           "intent": {
             "type": "action",
-            "originalText": "I opened my eyes, sitting against the wall. I rubbed my temples, trying to remember how I got here.",
-            "description": "wake up sitting against the wall and rub temples",
+            "originalText": "Why can't I remember anything before the research agreement. It's like my memory was erased.",
+            "description": "",
             "actorId": "bf3f29d2-cf11-4b11-9a99-b13c126d400e",
             "targetIds": []
           }

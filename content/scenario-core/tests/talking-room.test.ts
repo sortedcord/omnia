@@ -64,25 +64,30 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     expect(alphaName.hasAccess(alphaId)).toBe(true);
     expect(alphaName.hasAccess(betaId)).toBe(false);
     
-    // Check private knowledge attribute visibility
-    const alphaKnowledge = alpha!.attributes.get("knowledge")!;
-    expect(alphaKnowledge.visibility).toBe("PRIVATE");
-    expect(alphaKnowledge.hasAccess(alphaId)).toBe(true);
-    expect(alphaKnowledge.hasAccess(betaId)).toBe(false);
-
     // Check system-only attribute (neural_erasure_dose)
     const alphaDose = alpha!.attributes.get("neural_erasure_dose")!;
     expect(alphaDose.visibility).toBe("PRIVATE");
     expect(alphaDose.hasAccess(alphaId)).toBe(false);
     expect(alphaDose.hasAccess(betaId)).toBe(false);
 
-    // Check subjective aliases
-    expect(alpha!.aliases.get(betaId)).toBe("the person in the Beta jumpsuit");
+    // Verify subjective aliases are initially undefined
+    expect(alpha!.aliases.get(betaId)).toBeUndefined();
 
     const beta = world!.getEntity(betaId);
     expect(beta).toBeDefined();
     expect(beta!.locationId).toBe("white-room");
-    expect(beta!.aliases.get(alphaId)).toBe("the person in the Alpha jumpsuit");
+    expect(beta!.aliases.get(alphaId)).toBeUndefined();
+
+    // Verify subjective aliases can be dynamically resolved via AliasDeltaGenerator
+    const { AliasDeltaGenerator } = await import("@omnia/architect");
+    const { MockLLMProvider } = await import("@omnia/llm");
+    const llmProvider = new MockLLMProvider([{ alias: "the person in the Beta jumpsuit" }]);
+    const aliasGenerator = new AliasDeltaGenerator(llmProvider);
+
+    const generatedAlias = await aliasGenerator.generate(alpha!, beta!);
+    expect(generatedAlias).toBe("the person in the Beta jumpsuit");
+    alpha!.aliases.set(betaId, generatedAlias);
+    expect(alpha!.aliases.get(betaId)).toBe("the person in the Beta jumpsuit");
 
     // Verify subjective world state serializes the location attributes (epistemic inclusion)
     const { serializeSubjectiveWorldState } = await import("@omnia/core");
@@ -103,12 +108,16 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     const alphaMemories = bufferRepo.listForOwner(alphaId);
     expect(alphaMemories).toHaveLength(1);
     expect(alphaMemories[0].id).toBe("alpha-wake");
-    expect(alphaMemories[0].intent.description).toBe("wake up on the cold floor and stand up");
+    expect(alphaMemories[0].intent.type).toBe("monologue");
+    expect(alphaMemories[0].intent.originalText).toContain("jail");
+    expect(alphaMemories[0].intent.description).toBe("");
 
     const betaMemories = bufferRepo.listForOwner(betaId);
     expect(betaMemories).toHaveLength(1);
     expect(betaMemories[0].id).toBe("beta-wake");
-    expect(betaMemories[0].intent.description).toBe("wake up sitting against the wall and rub temples");
+    expect(betaMemories[0].intent.type).toBe("action");
+    expect(betaMemories[0].intent.originalText).toContain("agreement");
+    expect(betaMemories[0].intent.description).toBe("");
 
     db.close();
   });

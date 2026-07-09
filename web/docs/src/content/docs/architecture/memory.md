@@ -89,3 +89,15 @@ CREATE TABLE IF NOT EXISTS buffer_entries (
 
 - **JSON Storage**: `intent` and `outcome` are serialized/deserialized as raw JSON, validated by Zod at creation time.
 - **Cascade Deletes**: Deleting an entity removes all associated subjective memory entries.
+
+## Time Naturalization
+
+LLMs are poor at tracking quantized clock times, and real entities do not recall exact timestamps for past events. To make memories psychologically realistic, timestamps are converted into relative natural language phrases prior to prompt injection:
+
+* **Utility**: `naturalizeTime(now: Date, past: Date): string` converts raw dates into subjective relative strings.
+* **Granularity Tiers**:
+  * **Relative (< 6 hours)**: Returns short offsets like `"just now"`, `"moments ago"`, `"a couple hours ago"`, or `"a few hours ago"`.
+  * **Same Subjective Day (6h to 18h)**: Detects waking hours (05:00 - 21:59). If both times occur within the same waking block, it returns `"earlier today, in the {period}"` (where period is `morning`, `afternoon`, or `evening`).
+  * **Plausible Sleep Boundaries**: Past events from sleep hours are mapped to `"last night"`, `"around midnight"`, or `"late last night"`.
+  * **Coarse (>= 48 hours)**: Returns broad descriptors like `"a couple days ago"`, `"about a week ago"`, `"a couple months ago"`, or `"years ago"`.
+

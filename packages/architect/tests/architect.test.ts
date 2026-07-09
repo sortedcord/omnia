@@ -1,8 +1,8 @@
 import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
-import { WorldState, Entity, SQLiteRepository } from "@omnia/core";
+import { WorldState, Entity, SQLiteRepository, AttributeVisibility } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { Architect } from "@omnia/architect";
+import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import { Intent } from "@omnia/intent";
 
 describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
@@ -170,5 +170,27 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
     expect(loaded.clock.get().toISOString()).toBe(startTime.toISOString());
 
     db.close();
+  });
+});
+
+describe("AliasDeltaGenerator Unit Tests (Tier 1)", () => {
+  test("successfully generates descriptive alias based on visible attributes", async () => {
+    const world = new WorldState("world-1");
+    const viewer = new Entity("viewer-1");
+    const target = new Entity("target-1");
+    target.addAttribute("appearance", "A tall elf with silver hair", AttributeVisibility.PUBLIC);
+    target.addAttribute("clothing", "A green tunic", AttributeVisibility.PUBLIC);
+    world.addEntity(viewer);
+    world.addEntity(target);
+
+    const mockResponse = {
+      alias: "the tall silver-haired elf in the green tunic",
+    };
+    const llmProvider = new MockLLMProvider([mockResponse]);
+    const generator = new AliasDeltaGenerator(llmProvider);
+
+    const result = await generator.generate(viewer, target);
+
+    expect(result).toBe("the tall silver-haired elf in the green tunic");
   });
 });

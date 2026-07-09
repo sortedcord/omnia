@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "content/scenario-builder/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", "content/scenario-builder/**", "**/.astro/**"],
   },
 
   js.configs.recommended,
