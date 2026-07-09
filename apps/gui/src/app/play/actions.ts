@@ -254,6 +254,15 @@ export async function setActiveProviderInstance(id: string): Promise<void> {
   ProviderManager.setActive(id);
 }
 
+export async function updateProviderInstance(
+  id: string,
+  name: string,
+  providerName: string,
+  apiKey?: string,
+): Promise<void> {
+  ProviderManager.update(id, name, providerName, apiKey);
+}
+
 export async function getProviderMappings(): Promise<Record<string, string>> {
   return ProviderManager.getMappings();
 }

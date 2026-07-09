@@ -94,6 +94,27 @@ export class ProviderManager {
     }
   }
 
+  static update(id: string, name: string, providerName: string, apiKey?: string): void {
+    const db = getSettingsDb();
+    try {
+      if (apiKey && apiKey.trim()) {
+        db.prepare(`
+          UPDATE provider_instances
+          SET name = ?, providerName = ?, apiKey = ?
+          WHERE id = ?
+        `).run(name, providerName, apiKey, id);
+      } else {
+        db.prepare(`
+          UPDATE provider_instances
+          SET name = ?, providerName = ?
+          WHERE id = ?
+        `).run(name, providerName, id);
+      }
+    } finally {
+      db.close();
+    }
+  }
+
   static getActive(): LLMProviderInstance | null {
     const db = getSettingsDb();
     try {

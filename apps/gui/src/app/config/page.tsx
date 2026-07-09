@@ -9,6 +9,7 @@ import {
   setActiveProviderInstance,
   getProviderMappings,
   setProviderMapping,
+  updateProviderInstance,
 } from "@/app/play/actions";
 import type { LLMProviderInstance } from "@/lib/provider-manager";
 
@@ -26,9 +27,28 @@ export default function ConfigPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [newName, setNewName] = useState("");
-  const [newProvider, setNewProvider] = useState("google-genai");
-  const [newKey, setNewKey] = useState("");
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | "new">("new");
+  const [editName, setEditName] = useState("");
+  const [editProvider, setEditProvider] = useState("google-genai");
+  const [editKey, setEditKey] = useState("");
+  const [editIsActive, setEditIsActive] = useState(false);
+
+  useEffect(() => {
+    if (selectedInstanceId === "new") {
+      setEditName("");
+      setEditProvider("google-genai");
+      setEditKey("");
+      setEditIsActive(false);
+    } else {
+      const inst = instances.find((i) => i.id === selectedInstanceId);
+      if (inst) {
+        setEditName(inst.name);
+        setEditProvider(inst.providerName);
+        setEditKey("");
+        setEditIsActive(inst.isActive);
+      }
+    }
+  }, [selectedInstanceId, instances]);
 
   const loadInstances = useCallback(async () => {
     try {
@@ -67,27 +87,35 @@ export default function ConfigPage() {
     loadAll();
   }, [loadAll]);
 
-  const handleAddInstance = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim() || !newKey.trim()) return;
-    try {
-      setLoading(true);
-      await createProviderInstance(newName, newProvider, newKey);
-      setNewName("");
-      setNewKey("");
-      await loadInstances();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
+    if (!editName.trim()) {
+      setError("Name is required.");
+      return;
     }
-  };
 
-  const handleDeleteInstance = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this provider instance?")) return;
     try {
       setLoading(true);
-      await deleteProviderInstance(id);
+      setError("");
+
+      if (selectedInstanceId === "new") {
+        if (!editKey.trim()) {
+          setError("API Key is required for new instances.");
+          setLoading(false);
+          return;
+        }
+        const created = await createProviderInstance(editName, editProvider, editKey);
+        if (editIsActive) {
+          await setActiveProviderInstance(created.id);
+        }
+        setSelectedInstanceId(created.id);
+      } else {
+        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined);
+        if (editIsActive) {
+          await setActiveProviderInstance(selectedInstanceId);
+        }
+      }
+
       await loadInstances();
       await loadMappings();
     } catch (err) {
@@ -97,11 +125,17 @@ export default function ConfigPage() {
     }
   };
 
-  const handleSetActiveInstance = async (id: string) => {
+  const handleDelete = async () => {
+    if (selectedInstanceId === "new") return;
+    if (!confirm("Are you sure you want to delete this provider instance?")) return;
+
     try {
       setLoading(true);
-      await setActiveProviderInstance(id);
+      setError("");
+      await deleteProviderInstance(selectedInstanceId);
+      setSelectedInstanceId("new");
       await loadInstances();
+      await loadMappings();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -132,99 +166,125 @@ export default function ConfigPage() {
         <>
           <section className="config-section">
             <h2>LLM Provider Instances</h2>
-            <div className="instances-container">
-              {instances.length === 0 ? (
-                <div className="config-hint">
-                  No custom LLM provider instances configured. Defaulting to the environment <code>GOOGLE_API_KEY</code> if present.
-                </div>
-              ) : (
-                <table className="scenario-table">
-                  <thead>
-                    <tr>
-                      <th>Friendly Name</th>
-                      <th>Provider Type</th>
-                      <th>API Key Preview</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {instances.map((inst) => (
-                      <tr key={inst.id}>
-                        <td><strong>{inst.name}</strong></td>
-                        <td><code>{inst.providerName}</code></td>
-                        <td>
-                          <code>
-                            {inst.apiKey.substring(0, 10)}...{inst.apiKey.substring(inst.apiKey.length - 4)}
-                          </code>
-                        </td>
-                        <td>
-                          {inst.isActive ? (
-                            <span className="status-pill active">Active</span>
-                          ) : (
-                            <span className="status-pill inactive">Inactive</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            {!inst.isActive && (
-                              <button onClick={() => handleSetActiveInstance(inst.id)} className="btn-sm">
-                                Make Active
-                              </button>
-                            )}
-                            <button onClick={() => handleDeleteInstance(inst.id)} className="btn-sm delete-btn">
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <form onSubmit={handleAddInstance} className="add-instance-form">
-              <h3>Add LLM Provider Instance</h3>
-              <div className="form-fields">
-                <div className="field">
-                  <label htmlFor="instName">Friendly Name</label>
-                  <input
-                    id="instName"
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="e.g. Gemini - Production"
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="instProvider">Provider Type</label>
-                  <select
-                    id="instProvider"
-                    value={newProvider}
-                    onChange={(e) => setNewProvider(e.target.value)}
+            <div className="provider-split-container">
+              
+              {/* 30% area */}
+              <div className="provider-list-pane">
+                <div className="pane-header">
+                  <h3>Instances</h3>
+                  <button
+                    onClick={() => setSelectedInstanceId("new")}
+                    className="btn-add-inst"
+                    type="button"
                   >
-                    <option value="google-genai">Google Gemini (Gemini-2.5-flash)</option>
-                    <option value="mock">Mock LLM Provider</option>
-                  </select>
+                    + Add
+                  </button>
                 </div>
-                <div className="field">
-                  <label htmlFor="instKey">API Key</label>
-                  <input
-                    id="instKey"
-                    type="password"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    placeholder="AIzaSy..."
-                    required
-                  />
+                <div className="pane-list">
+                  {instances.length === 0 ? (
+                    <div className="no-instances-msg">No instances configured</div>
+                  ) : (
+                    instances.map((inst) => (
+                      <div
+                        key={inst.id}
+                        onClick={() => setSelectedInstanceId(inst.id)}
+                        className={`instance-list-item ${selectedInstanceId === inst.id ? "active" : ""}`}
+                      >
+                        <div className="item-name">{inst.name}</div>
+                        <div className="item-meta">
+                          <span>{inst.providerName}</span>
+                          {inst.isActive && <span className="active-pill">Active</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <button type="submit" disabled={loading} className="btn-add">
-                  Add Instance
-                </button>
               </div>
-            </form>
+
+              {/* 70% area */}
+              <div className="provider-form-pane">
+                <form onSubmit={handleSave} className="provider-config-form">
+                  <div className="form-scroll-content">
+                    <h3>
+                      {selectedInstanceId === "new"
+                        ? "Create New Provider Instance"
+                        : `Configure: ${editName}`}
+                    </h3>
+
+                    <div className="form-group">
+                      <label htmlFor="formName">Friendly Name</label>
+                      <input
+                        id="formName"
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="e.g. Gemini - Production"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="formProvider">Provider Type</label>
+                      <select
+                        id="formProvider"
+                        value={editProvider}
+                        onChange={(e) => setEditProvider(e.target.value)}
+                      >
+                        <option value="google-genai">Google Gemini (Gemini-2.5-flash)</option>
+                        <option value="mock">Mock LLM Provider</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="formKey">API Key</label>
+                      <input
+                        id="formKey"
+                        type="password"
+                        value={editKey}
+                        onChange={(e) => setEditKey(e.target.value)}
+                        placeholder={
+                          selectedInstanceId === "new"
+                            ? "AIzaSy..."
+                            : "•••••••• (unchanged)"
+                        }
+                        required={selectedInstanceId === "new"}
+                      />
+                    </div>
+
+                    <div className="form-group checkbox-group">
+                      <input
+                        id="formActive"
+                        type="checkbox"
+                        checked={editIsActive}
+                        onChange={(e) => setEditIsActive(e.target.checked)}
+                      />
+                      <label htmlFor="formActive">Set as Active Instance</label>
+                    </div>
+                  </div>
+
+                  <div className="form-actions-bar">
+                    <div className="action-left">
+                      {selectedInstanceId !== "new" && (
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={loading}
+                          className="btn-delete-pane"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <div className="action-right">
+                      <button type="submit" disabled={loading} className="btn-save-pane">
+                        {loading ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </div>
           </section>
 
           <section className="config-section">
@@ -451,57 +511,207 @@ export default function ConfigPage() {
         .btn-sm.delete-btn:hover {
           background: #dc2626;
         }
-        .add-instance-form {
-          margin-top: 1.5rem;
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 1.25rem;
-        }
-        .add-instance-form h3 {
-          font-size: 0.95rem;
-          margin-bottom: 0.75rem;
-          color: #111;
-        }
-        .form-fields {
+        /* Split container */
+        .provider-split-container {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 1rem;
-          align-items: flex-end;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #fff;
+          margin-top: 1rem;
+          min-height: 400px;
         }
         @media (min-width: 768px) {
-          .form-fields {
-            grid-template-columns: 1fr 1fr 1.5fr auto;
+          .provider-split-container {
+            grid-template-columns: 30% 70%;
           }
         }
-        .form-fields .field {
+
+        /* 30% List Pane */
+        .provider-list-pane {
+          border-right: 1px solid #e5e7eb;
+          background: #f9fafb;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
         }
-        .form-fields .field label {
-          font-size: 0.75rem;
+        .pane-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem;
+          border-bottom: 1px solid #e5e7eb;
+          background: #f3f4f6;
+        }
+        .pane-header h3 {
+          margin: 0;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #111;
+        }
+        .btn-add-inst {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.8125rem;
           font-weight: 500;
-        }
-        .form-fields .field input,
-        .form-fields .field select {
-          padding: 0.375rem 0.5rem;
-          font-size: 0.8125rem;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          background: #fff;
-        }
-        .btn-add {
-          padding: 0.375rem 1rem;
-          font-size: 0.8125rem;
           background: #10b981;
           color: #fff;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-add-inst:hover {
+          background: #059669;
+        }
+        .pane-list {
+          overflow-y: auto;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .no-instances-msg {
+          padding: 2rem 1rem;
+          text-align: center;
+          color: #6b7280;
+          font-size: 0.8125rem;
+        }
+        .instance-list-item {
+          padding: 1rem;
+          border-bottom: 1px solid #e5e7eb;
+          cursor: pointer;
+          transition: background 0.15s, border-left 0.15s;
+          border-left: 3px solid transparent;
+        }
+        .instance-list-item:hover {
+          background: #f3f4f6;
+        }
+        .instance-list-item.active {
+          background: #eff6ff;
+          border-left: 3px solid #3b82f6;
+        }
+        .item-name {
+          font-weight: 500;
+          font-size: 0.875rem;
+          color: #111;
+        }
+        .item-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 0.25rem;
+          font-size: 0.75rem;
+          color: #6b7280;
+        }
+        .active-pill {
+          background: #dcfce7;
+          color: #15803d;
+          font-weight: 600;
+          padding: 0.0625rem 0.375rem;
+          border-radius: 9999px;
+        }
+
+        /* 70% Form Pane */
+        .provider-form-pane {
+          background: #fff;
+          display: flex;
+          flex-direction: column;
+        }
+        .provider-config-form {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          justify-content: space-between;
+        }
+        .form-scroll-content {
+          padding: 1.5rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+        .form-scroll-content h3 {
+          margin: 0 0 0.5rem 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #111;
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.375rem;
+        }
+        .form-group label {
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: #374151;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group select {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: #fff;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .checkbox-group {
+          flex-direction: row;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.25rem;
+        }
+        .checkbox-group label {
           cursor: pointer;
         }
-        .btn-add:hover {
-          background: #059669;
+        .checkbox-group input {
+          width: 1rem;
+          height: 1rem;
+          cursor: pointer;
+        }
+
+        /* Action bar */
+        .form-actions-bar {
+          padding: 1rem 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          background: #f9fafb;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .btn-delete-pane {
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          background: #ef4444;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-delete-pane:hover {
+          background: #dc2626;
+        }
+        .btn-save-pane {
+          padding: 0.5rem 1.25rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          background: #2563eb;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-save-pane:hover {
+          background: #1d4ed8;
         }
 
         /* Task Provider Routing Styles */
