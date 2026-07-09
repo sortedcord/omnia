@@ -52,12 +52,12 @@ export class ActorPromptBuilder {
     worldState: WorldState,
     entity: Entity,
   ): { systemPrompt: string; userContext: string } {
-    const systemPrompt = this.buildSystemPrompt(entity);
+    const systemPrompt = this.buildSystemPrompt();
     const userContext = this.buildUserContext(worldState, entity);
     return { systemPrompt, userContext };
   }
 
-  private buildSystemPrompt(entity: Entity): string {
+  private buildSystemPrompt(): string {
     return `
 You are an actor agent embodying a single character in a narrative simulation. You ARE this character — act immersively, naturally, and in-character at all times. Do not break character, do not reference being an AI or a system, and do not narrate from outside the character's perspective.
 
@@ -74,15 +74,11 @@ Guidelines:
 - Keep your prose vivid but concise. A single response may contain more than one intent (e.g., you may think, then speak, then act) — write them in natural narrative order.
 - Not every response requires an outward action. It is perfectly valid to only think (a monologue) and do nothing perceivable.
 - Never speak or act on another entity's behalf — you only control your own character.
-
-Your character's identifier in this world is "${entity.id}".
+".
 `.trim();
   }
 
-  private buildUserContext(
-    worldState: WorldState,
-    entity: Entity,
-  ): string {
+  private buildUserContext(worldState: WorldState, entity: Entity): string {
     const sections: string[] = [];
 
     // --- Subjective present time ---
@@ -97,7 +93,10 @@ Your character's identifier in this world is "${entity.id}".
     );
 
     // --- Recent memory ---
-    const memorySection = this.buildMemorySection(entity, worldState.clock.get());
+    const memorySection = this.buildMemorySection(
+      entity,
+      worldState.clock.get(),
+    );
     if (memorySection) {
       sections.push(memorySection);
     }
@@ -120,12 +119,22 @@ Your character's identifier in this world is "${entity.id}".
     }
 
     const recent = entries.slice(-this.memoryLimit);
-    const lines = recent.map((entry) => {
+    const groupedLines: string[] = [];
+    let currentGroup: string | null = null;
+
+    for (const entry of recent) {
       const serialized = serializeSubjectiveBufferEntry(entry, entity);
       const when = naturalizeTime(now, new Date(entry.timestamp));
-      return `${serialized} (${when})`;
-    });
 
-    return `=== YOUR RECENT MEMORY ===\n${lines.join("\n")}`;
+      if (when !== currentGroup) {
+        currentGroup = when;
+        const header = when.charAt(0).toUpperCase() + when.slice(1);
+        groupedLines.push(header);
+      }
+
+      groupedLines.push(`  - ${serialized}`);
+    }
+
+    return `=== YOUR RECENT MEMORY ===\n${groupedLines.join("\n")}`;
   }
 }

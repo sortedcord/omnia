@@ -39,7 +39,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe('[12:00:00 PM] the hooded figure spoke to the bartender: "Bob greets Charlie"');
+    expect(result).toBe('the hooded figure spoke to the bartender: "Bob greets Charlie"');
   });
 
   test("serializes action intent with outcome details", () => {
@@ -65,7 +65,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe('[12:05:00 PM] the hooded figure Bob attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)');
+    expect(result).toBe('the hooded figure Bob attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)');
   });
 
   test("serializes self-reference and unfamiliar actors", () => {
@@ -86,7 +86,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const resultSelf = serializeSubjectiveBufferEntry(entrySelf, viewer);
-    expect(resultSelf).toBe("[12:10:00 PM] you open the window");
+    expect(resultSelf).toBe("you open the window");
 
     const entryUnfamiliar: BufferEntry = {
       id: "entry-unfamiliar",
@@ -103,7 +103,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const resultUnfamiliar = serializeSubjectiveBufferEntry(entryUnfamiliar, viewer);
-    expect(resultUnfamiliar).toBe("[12:15:00 PM] an unfamiliar figure knock on the door");
+    expect(resultUnfamiliar).toBe("an unfamiliar figure knock on the door");
   });
 });
 

@@ -25,13 +25,6 @@ export function serializeSubjectiveBufferEntry(
   entry: BufferEntry,
   viewer: Entity,
 ): string {
-  const dateObj = new Date(entry.timestamp);
-  // Ensure a deterministic timezone/format for testing and model inputs:
-  const timeStr = dateObj.toLocaleTimeString("en-US", {
-    hour12: true,
-    timeZone: "UTC",
-  });
-
   const actorAlias = resolveAlias(viewer, entry.intent.actorId);
 
   const targetAliases = entry.intent.targetIds.map((tid) =>
@@ -48,7 +41,7 @@ export function serializeSubjectiveBufferEntry(
     }
   }
 
-  return `[${timeStr}] ${actorAlias} ${details}`;
+  return `${actorAlias} ${details}`;
 }
 
 export class BufferRepository {
