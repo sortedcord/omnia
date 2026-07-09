@@ -11,19 +11,13 @@ export const TimeDeltaSchema = z.object({
 export type TimeDelta = z.infer<typeof TimeDeltaSchema>;
 
 export interface IDeltaGenerator<T> {
-  generate(
-    worldState: WorldState,
-    intent: Intent,
-  ): Promise<T>;
+  generate(worldState: WorldState, intent: Intent): Promise<T>;
 }
 
 export class TimeDeltaGenerator implements IDeltaGenerator<TimeDelta> {
   constructor(private llmProvider: ILLMProvider) {}
 
-  async generate(
-    worldState: WorldState,
-    intent: Intent,
-  ): Promise<TimeDelta> {
+  async generate(worldState: WorldState, intent: Intent): Promise<TimeDelta> {
     const systemPrompt = `
 You are the Time Delta Generator for the World Architect.
 Your task is to judge how much time (in minutes) a proposed action would logically take to execute in the physical world.
@@ -57,7 +51,9 @@ Target IDs: ${intent.targetIds.join(", ") || "(None)"}
     });
 
     if (!response.success || !response.data) {
-      throw new Error(`Failed to generate time delta: ${response.error || "Unknown LLM error"}`);
+      throw new Error(
+        `Failed to generate time delta: ${response.error || "Unknown LLM error"}`,
+      );
     }
 
     return response.data;
@@ -74,7 +70,7 @@ export class AliasDeltaGenerator {
   constructor(private llmProvider: ILLMProvider) {}
 
   /**
-   * Generates a natural, subjective descriptive alias for a target entity 
+   * Generates a natural, subjective descriptive alias for a target entity
    * based on its visible attributes from the perspective of a viewer entity.
    */
   async generate(
@@ -82,18 +78,21 @@ export class AliasDeltaGenerator {
     target: import("@omnia/core").Entity,
   ): Promise<string> {
     const visibleAttrs = target.getVisibleAttributesFor(viewer.id);
-    const attrsStr = visibleAttrs.map((a) => `* ${a.name}: ${a.getValue()}`).join("\n");
+    const attrsStr = visibleAttrs
+      .map((a) => `* ${a.name}: ${a.getValue()}`)
+      .join("\n");
 
     const systemPrompt = `
 You are the Alias Delta Generator for the World Architect.
 Your task is to generate a natural, subjective, descriptive alias (noun phrase) that a viewer entity would use to refer to a target entity they are seeing for the first time, based ONLY on the target entity's visible public attributes.
 
 Rules:
-1. The alias must be a simple, natural, subjective noun phrase (e.g. "the tall woman in the grey jumpsuit", "the red-haired man", "the hooded figure").
+1. The alias must be a simple, natural, subjective noun phrase.
 2. Base the description strictly on the target's visible attributes. Do not invent details not present in the attributes.
 3. Never use raw system IDs or UUIDs in the alias description.
 4. Do not use the target's private name attribute unless they have explicit access to it (which is already filtered in the attributes list).
-5. Return a structured JSON object containing:
+5. Keep the phrase very short. Not more than 5 words. These aliases can also be internal nicknames for those entities.
+6. Return a structured JSON object containing:
    - "alias": string representing the descriptive alias.
 `.trim();
 
@@ -112,7 +111,9 @@ ${attrsStr || "(No visible attributes)"}
     });
 
     if (!response.success || !response.data) {
-      throw new Error(`Failed to generate alias delta: ${response.error || "Unknown LLM error"}`);
+      throw new Error(
+        `Failed to generate alias delta: ${response.error || "Unknown LLM error"}`,
+      );
     }
 
     return response.data.alias;

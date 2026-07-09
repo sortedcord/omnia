@@ -77,7 +77,9 @@ async function runAliasResolution(
         if (!viewer.aliases.has(target.id)) {
           const alias = await aliasGenerator.generate(viewer, target);
           viewer.aliases.set(target.id, alias);
-          console.log(`\n🔍 [Alias Resolved] "${viewer.id}" sees "${target.id}" -> alias: "${alias}"`);
+          console.log(
+            `\n[Alias Resolved] "${viewer.id}" sees "${target.id}" -> alias: "${alias}"`,
+          );
           // Save the viewer state with the new alias
           coreRepo.saveEntity(viewer, worldState.id);
         }
@@ -93,22 +95,28 @@ async function main() {
   let logStream: fs.WriteStream | undefined;
   if (logFileIndex !== -1 && args[logFileIndex + 1]) {
     const logFilePath = path.resolve(args[logFileIndex + 1]);
-    logStream = fs.createWriteStream(logFilePath, { flags: "w", encoding: "utf-8" });
+    logStream = fs.createWriteStream(logFilePath, {
+      flags: "w",
+      encoding: "utf-8",
+    });
 
     // Monkeypatch console.log
     const originalLog = console.log;
     console.log = (...messageArgs: unknown[]) => {
       originalLog(...messageArgs);
-      const text = messageArgs.map(arg => {
-        if (typeof arg === "object" && arg !== null) {
-          try {
-            return JSON.stringify(arg, null, 2);
-          } catch {
+      const text =
+        messageArgs
+          .map((arg) => {
+            if (typeof arg === "object" && arg !== null) {
+              try {
+                return JSON.stringify(arg, null, 2);
+              } catch {
+                return String(arg);
+              }
+            }
             return String(arg);
-          }
-        }
-        return String(arg);
-      }).join(" ") + "\n";
+          })
+          .join(" ") + "\n";
       logStream?.write(text);
     };
 
@@ -116,16 +124,19 @@ async function main() {
     const originalError = console.error;
     console.error = (...messageArgs: unknown[]) => {
       originalError(...messageArgs);
-      const text = messageArgs.map(arg => {
-        if (typeof arg === "object" && arg !== null) {
-          try {
-            return JSON.stringify(arg, null, 2);
-          } catch {
+      const text =
+        messageArgs
+          .map((arg) => {
+            if (typeof arg === "object" && arg !== null) {
+              try {
+                return JSON.stringify(arg, null, 2);
+              } catch {
+                return String(arg);
+              }
+            }
             return String(arg);
-          }
-        }
-        return String(arg);
-      }).join(" ") + "\n";
+          })
+          .join(" ") + "\n";
       logStream?.write("[ERROR] " + text);
     };
 
@@ -239,31 +250,49 @@ async function main() {
           currentWorldState,
           entity,
         );
-        console.log(`\n🔍 [VERBOSE] Assembled Prompts for "${entity.id}":`);
+        console.log(`\n[VERBOSE] Assembled Prompts for "${entity.id}":`);
         console.log("\n--- SYSTEM PROMPT ---");
         console.log(systemPrompt);
         console.log("\n--- USER CONTEXT ---");
         console.log(userContext);
         console.log("\n--- CONTEXT BREAKDOWN ---");
-        
+
         const userSections = userContext.split("\n\n");
-        const momentSection = userSections.find(s => s.startsWith("=== CURRENT MOMENT ===")) || "";
-        const worldSection = userSections.find(s => s.startsWith("=== THE WORLD AS YOU PERCEIVE IT ===")) || "";
-        const memorySection = userSections.find(s => s.startsWith("=== YOUR RECENT MEMORY ===")) || "";
-        
+        const momentSection =
+          userSections.find((s) => s.startsWith("=== CURRENT MOMENT ===")) ||
+          "";
+        const worldSection =
+          userSections.find((s) =>
+            s.startsWith("=== THE WORLD AS YOU PERCEIVE IT ==="),
+          ) || "";
+        const memorySection =
+          userSections.find((s) =>
+            s.startsWith("=== YOUR RECENT MEMORY ==="),
+          ) || "";
+
         const systemChars = systemPrompt.length;
         const momentChars = momentSection.length;
         const worldChars = worldSection.length;
         const memoryChars = memorySection.length;
         const totalChars = systemChars + userContext.length;
-        
+
         const estTokens = (chars: number) => Math.ceil(chars / 4);
-        
-        console.log(`  ├─ System Instructions:   ${systemChars.toLocaleString()} chars (~${estTokens(systemChars)} tokens)`);
-        console.log(`  ├─ Current Moment Context: ${momentChars.toLocaleString()} chars (~${estTokens(momentChars)} tokens)`);
-        console.log(`  ├─ World Perception:      ${worldChars.toLocaleString()} chars (~${estTokens(worldChars)} tokens)`);
-        console.log(`  ├─ Recent Memory Buffer:  ${memoryChars.toLocaleString()} chars (~${estTokens(memoryChars)} tokens)`);
-        console.log(`  └─ TOTAL ESTIMATED INPUT: ${totalChars.toLocaleString()} chars (~${estTokens(totalChars)} tokens)`);
+
+        console.log(
+          `  ├─ System Instructions:   ${systemChars.toLocaleString()} chars (~${estTokens(systemChars)} tokens)`,
+        );
+        console.log(
+          `  ├─ Current Moment Context: ${momentChars.toLocaleString()} chars (~${estTokens(momentChars)} tokens)`,
+        );
+        console.log(
+          `  ├─ World Perception:      ${worldChars.toLocaleString()} chars (~${estTokens(worldChars)} tokens)`,
+        );
+        console.log(
+          `  ├─ Recent Memory Buffer:  ${memoryChars.toLocaleString()} chars (~${estTokens(memoryChars)} tokens)`,
+        );
+        console.log(
+          `  └─ TOTAL ESTIMATED INPUT: ${totalChars.toLocaleString()} chars (~${estTokens(totalChars)} tokens)`,
+        );
         console.log(
           "--------------------------------------------------------------------------------",
         );
@@ -284,7 +313,7 @@ async function main() {
 
       // Verbose mode: Output decoded intent structures
       if (isVerbose) {
-        console.log(`\n🔍 [VERBOSE] Decoded Intents from Prose:`);
+        console.log(`\n[VERBOSE] Decoded Intents from Prose:`);
         console.log(JSON.stringify(turnResult.intents.intents, null, 2));
         console.log(
           "--------------------------------------------------------------------------------",
@@ -301,7 +330,7 @@ async function main() {
 
         // Verbose mode: Output architect evaluation
         if (isVerbose) {
-          console.log(`\n🔍 [VERBOSE] Architect Intent Processing:`);
+          console.log(`\n[VERBOSE] Architect Intent Processing:`);
           console.log(`  Type: ${intent.type}`);
           console.log(`  Description: "${intent.description}"`);
           if (intent.type === "monologue") {
