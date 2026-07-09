@@ -88,6 +88,51 @@ async function runAliasResolution(
 
 async function main() {
   const args = process.argv.slice(2);
+
+  const logFileIndex = args.indexOf("--log-file");
+  let logStream: fs.WriteStream | undefined;
+  if (logFileIndex !== -1 && args[logFileIndex + 1]) {
+    const logFilePath = path.resolve(args[logFileIndex + 1]);
+    logStream = fs.createWriteStream(logFilePath, { flags: "w", encoding: "utf-8" });
+
+    // Monkeypatch console.log
+    const originalLog = console.log;
+    console.log = (...messageArgs: unknown[]) => {
+      originalLog(...messageArgs);
+      const text = messageArgs.map(arg => {
+        if (typeof arg === "object" && arg !== null) {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(" ") + "\n";
+      logStream?.write(text);
+    };
+
+    // Monkeypatch console.error
+    const originalError = console.error;
+    console.error = (...messageArgs: unknown[]) => {
+      originalError(...messageArgs);
+      const text = messageArgs.map(arg => {
+        if (typeof arg === "object" && arg !== null) {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(" ") + "\n";
+      logStream?.write("[ERROR] " + text);
+    };
+
+    process.on("exit", () => {
+      logStream?.end();
+    });
+  }
   const scenarioArgIndex = args.indexOf("--scenario");
   const scenarioPath =
     scenarioArgIndex !== -1
