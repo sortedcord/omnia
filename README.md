@@ -8,10 +8,10 @@
 <b>An architectural framework for multi agent-narrative simulations and fictional worlds!</b>
 </p>
 <p align="center">
-  <a href="https://omnia.adityagupta.dev/docs"><img src="https://img.shields.io/badge/docs-read_the_docs-blue?style=flat-square" alt="Docs" /></a>
-  <img src="https://img.shields.io/github/license/sortedcord/omnia-consolidated?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/github/repo-size/sortedcord/omnia-consolidated?style=flat-square" alt="Repo Size" />
-  <img src="https://img.shields.io/github/languages/top/sortedcord/omnia-consolidated?style=flat-square" alt="Top Language" />
+  <a href="https://omnia.adityagupta.dev/docs"><img src="https://img.shields.io/badge/Omnia_Docs-Read_The_Docs-red?style=for-the-badge" alt="Docs" /></a>
+  <img src="https://img.shields.io/github/license/sortedcord/omnia-consolidated?style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/github/repo-size/sortedcord/omnia-consolidated?style=for-the-badge" alt="Repo Size" />
+  <img src="https://img.shields.io/github/languages/top/sortedcord/omnia-consolidated?style=for-the-badge" alt="Top Language" />
 </p>
 
 The <b>world state lives outside the model</b>, characters act through <b>intents that get validated</b> and applied by engine code. Each character's knowledge, memory, and emotional state are subjective and partial by construction.
