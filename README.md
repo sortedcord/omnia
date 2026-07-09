@@ -137,9 +137,10 @@ omnia/
     spatial/     location and POI graph, portal-based perception
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
     scenario/    scenario JSON schema and loader (JSON → SQLite)
+  apps/
+    cli/         the playable loop (human or LLM actors, --scenario / --play flags)
   content/
     demo/              bundled scenarios (talking-room)
-  cli/           the playable loop (human or LLM actors, --scenario / --play flags)
   tests/
     integration/ cross-package tests against a mocked LLM
     evals/       deliberate real-API evaluation runs

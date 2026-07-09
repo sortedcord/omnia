@@ -12,6 +12,6 @@
     { "path": "./packages/llm" },
     { "path": "./packages/actor" },
     { "path": "./packages/scenario" },
-    { "path": "./cli" }
+    { "path": "./apps/cli" }
   ]
 }
