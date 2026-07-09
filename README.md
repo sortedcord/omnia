@@ -20,12 +20,11 @@ The <b>world state lives outside the model</b>, characters act through <b>intent
   <img src="./web/docs/src/assets/img/puppet.webp" />
 </p>
 
-Single-agent, single-context systems (AI Dungeon and its descendants) prompt one model to _be_ the world and everyone in it. That breaks in predictable ways over long sessions:
+Single-agent or single-context systems (AI Dungeon and its descendants) prompt one model to _be_ the world and everyone in it. That breaks in predictable ways over long sessions:
 
-- **State Leaks:** Characters know things they had no way of learning, because a model with full context cannot help but use it. The assassin's target greets him by name.
-- **Secrets Refuse to Stay Secret:** "Don't reveal this" is a suggestion a model can argue past, not a mechanism that says no. One clever player question and the conspiracy folds.
+- **State Leaks:** Characters know things they had no way of learning, because a model with full context cannot help but use it.
 - **Consequences Evaporate:** Betray someone, apologize, and they forgive you a turn later because nothing is tracking the betrayal as a persistent fact.
-- **Emotional Drift:** Emotional state is either frozen into a meaningless number (`trust: 40`) or handed to the model to grade itself, producing drifting, arbitrary values.
+- **Stat Drift:** Statistical attributes are either frozen into a meaningless number (`trust: 40`) or handed to the model to grade itself, producing drifting, arbitrary values.
 - **World Rot:** The world state slowly contradicts itself because the model has no structured place to keep it. The locked door is open, then locked, then never existed.
 - **Everyone Is One Person:** Every character shares one context, so every character shares one mind. They can't genuinely surprise each other, lie to each other, or know different things. They're sock puppets on the hands of one puppetmaster.
 
@@ -41,7 +40,7 @@ Omnia answers every one of these failures with the same move: **pull the thing t
 
 ## What This Buys You
 
-The payoff is scenario complexity that **uni agent systems structurally cannot represent, no matter how good the model gets**.
+The payoff is scenario complexity that **uni-agent systems structurally cannot represent, no matter how good the model gets**.
 
 - **Real secrets, real dramatic irony.** One NPC knows the sword is cursed; the other does not. This holds for hundreds of turns not because the model is disciplined, but because the second NPC's prompts are constructed from an attribute set that simply does not contain the fact. Leaking it would require the engine to have handed it over.
 - **Genuine deception between characters.** Because each character acts from its own bounded view, characters can lie to each other and be believed; with the truth intact in the world state. A con game, a mole in the party, an unreliable ally: these are queries over "who knows what" and not prompt engineering.
@@ -49,6 +48,8 @@ The payoff is scenario complexity that **uni agent systems structurally cannot r
 - **Divergent accounts of the same event.** Two witnesses to the same scene hold two different buffer entries, filtered through their own aliases and vantage points. Ask them separately what happened and you get testimony, not a transcript.
 - **A physics referee that can say no.** "I pick the lock with a hairpin" is validated against world state by the Architect before anything changes. Failure is a recorded outcome the character remembers, not a narrative the model politely retconned.
 - **Time that behaves.** A world clock advances by validated, per-action deltas, and memory is recalled with psychologically natural phrasing ("earlier today, in the afternoon" — not a timestamp). Long timelines stay coherent because time is data, not vibes.
+- **No main character syndrome.** The simulation runs fully autonomously or you act on behalf of any entity — you, the player, are just an entity in the data model, not structurally elevated above the rest of the world. The world can exist without the main character.
+- **Granular model control.** Omnia is not locked to a single LLM. You pick the model — and not just globally. **Every individual step that calls the LLM can be assigned its own model**. Narration prose that demands richer reasoning gets a frontier model; quick intent decoding or other generators get a smaller, faster, cheaper one — or a model running entirely on your local machine.
 
 The general principle: **anything that must remain true is state; the model only ever supplies behavior.**
 
