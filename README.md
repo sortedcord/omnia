@@ -1,10 +1,23 @@
-![Omnia Logo](web/docs/src/assets/img/logo.png)
+<p align="center">
+<img src="web/docs/src/assets/img/logo.png" alt="Omnia Logo" />
+</p>
 
-An LLM-assisted narrative simulation engine where the <b>world state lives outside the model</b>, characters act through <b>intents that get validated</b> and applied by engine code, and each character's knowledge, memory, and emotional state are subjective and partial by construction.
+<h1 align="center">Omnia</h1>
 
-Omnia is an engine for building narrative RPG-style worlds where characters are played by a language model. It is built to survive long play sessions instead of falling apart after twenty minutes.
+<p align="center">
+<b>An architectural framework for multi agent-narrative simulations and fictional worlds!</b>
+</p>
+<p align="center">
+  <img src="https://img.shields.io/github/license/sortedcord/omnia-consolidated?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/github/repo-size/sortedcord/omnia-consolidated?style=flat-square" alt="Repo Size" />
+  <img src="https://img.shields.io/github/languages/top/sortedcord/omnia-consolidated?style=flat-square" alt="Top Language" />
+</p>
 
-## The Problem with the Naive Approach
+The <b>world state lives outside the model</b>, characters act through <b>intents that get validated</b> and applied by engine code. Each character's knowledge, memory, and emotional state are subjective and partial by construction.
+
+<p align="center">
+  <img src="./web/docs/src/assets/img/puppet.webp" />
+</p>
 
 Single-agent, single-context systems (AI Dungeon and its descendants) prompt one model to _be_ the world and everyone in it. That breaks in predictable ways over long sessions:
 
@@ -15,29 +28,58 @@ Single-agent, single-context systems (AI Dungeon and its descendants) prompt one
 - **World Rot:** The world state slowly contradicts itself because the model has no structured place to keep it. The locked door is open, then locked, then never existed.
 - **Everyone Is One Person:** Every character shares one context, so every character shares one mind. They can't genuinely surprise each other, lie to each other, or know different things — they're sock puppets on the same hand.
 
-The root cause is the same in every case: the model is being asked to be the database, the physics engine, the referee, and the whole cast simultaneously — inside a context window that forgets, blends, and leaks.
+The root cause is the same in every case: the model is being asked to be the database, the physics engine and the whole cast simultaneously inside a sliding context window.
 
 ## The Omnia Solution
 
-Omnia answers every one of these failures with the same move: pull the thing that has to stay consistent out of the model and into structured, queryable, code-controlled state.
+Omnia answers every one of these failures with the same move: **pull the thing that has to stay consistent out of the model** and into structured, queryable, code-controlled state.
 
-- **World State:** Lives in a SQLite database, not in a context window. It cannot drift, because nothing regenerates it — it only changes through validated deltas.
+- **World State:** Lives in a DB, not a context window. It cannot drift, because nothing regenerates it. The world state only changes through validated deltas.
 - **Actions:** Actions are proposals (Intents) that engine code validates and applies; they are never direct edits the model makes to the world. The model proposes; deterministic code disposes.
 - **Epistemic Privacy:** Knowledge, memory, and emotion are modeled per character and kept partial on purpose. A character literally cannot reach for what it has not earned the right to know — the secret is not in its prompt, so there is nothing to jailbreak out of it.
 
 ## What This Buys You
 
-The payoff is scenario complexity that uni-agent systems structurally cannot represent, no matter how good the model gets:
+The payoff is scenario complexity that **uni agent systems structurally cannot represent, no matter how good the model gets**.
 
 - **Real secrets, real dramatic irony.** One NPC knows the sword is cursed; the other does not. This holds for hundreds of turns not because the model is disciplined, but because the second NPC's prompts are constructed from an attribute set that simply does not contain the fact. Leaking it would require the engine to have handed it over.
-- **Genuine deception between characters.** Because each character acts from its own bounded view, characters can lie to each other — and be believed — with the truth intact in the world state. A con game, a mole in the party, an unreliable ally: these are queries over who-knows-what, not prompt acrobatics.
-- **Betrayal that stays betrayed.** Events persist as per-observer memory entries with outcomes. An apology adds a memory; it does not delete one.
+- **Genuine deception between characters.** Because each character acts from its own bounded view, characters can lie to each other and be believed; with the truth intact in the world state. A con game, a mole in the party, an unreliable ally: these are queries over "who knows what" and not prompt engineering.
+- Events persist as per observer memory entries with outcomes. An apology adds a memory; it does not delete one.
 - **Divergent accounts of the same event.** Two witnesses to the same scene hold two different buffer entries, filtered through their own aliases and vantage points. Ask them separately what happened and you get testimony, not a transcript.
-- **Identity as information.** Characters refer to each other through subjective alias maps ("the hooded figure" vs. "Bob"). Recognizing someone, being recognized, or staying anonymous are all mechanical states — a masked stranger is a masked stranger until the engine says otherwise.
 - **A physics referee that can say no.** "I pick the lock with a hairpin" is validated against world state by the Architect before anything changes. Failure is a recorded outcome the character remembers, not a narrative the model politely retconned.
 - **Time that behaves.** A world clock advances by validated, per-action deltas, and memory is recalled with psychologically natural phrasing ("earlier today, in the afternoon" — not a timestamp). Long timelines stay coherent because time is data, not vibes.
 
-The general principle: **anything that must remain true is state; the model only ever supplies behavior.** That division of labor is what lets the cast, the secrets, and the timeline scale without the fiction collapsing.
+The general principle: **anything that must remain true is state; the model only ever supplies behavior.**
+
+## Installation
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v20+ recommended)
+- [pnpm](https://pnpm.io/) (v9+ recommended)
+- An API key for Google Gemini (`GOOGLE_API_KEY` environment variable), or configured settings via the GUI.
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sortedcord/omnia-consolidated.git
+   cd omnia-consolidated
+   ```
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+### Running the Web GUI
+
+To launch the Next.js development server for the GUI dashboard:
+
+```bash
+pnpm dev:gui
+```
+
+Access the application locally at `http://localhost:3000`.
 
 ## Core Architecture
 
@@ -57,13 +99,13 @@ The prose generator is pluggable (`IActorProseGenerator`): the same turn loop ru
 
 ### Intents & The World Architect
 
-An action becomes an **Intent** — a cheap, declarative, allowed-to-be-wrong proposal. Intents route to the **World Architect**, which validates them against the objective world state (dialogue is exempt; monologue never even arrives) and generates structured deltas — starting with time advancement — that deterministic code applies after strict schema (Zod) validation. The model proposes a change; it never touches the database.
+An action becomes an **Intent** which is a simple proposal that is _allowed to be wrong_. Intents route to the **World Architect**, which validates them against the objective world state and generates structured deltas like time advancement, attribute change, etc. This deterministic code applies after strict schema (Zod) validation. The model never touches the DB.
 
-This is the load-bearing wall. Because every mutation flows through one validated chokepoint, the world cannot rot: there is no second copy of reality inside a context window to fall out of sync.
+Because every mutation flows through one validated chokepoint, the world cannot rot: there is no second copy of reality inside a context window to fall out of sync.
 
-### Attribute-Level Privacy
+### Attribute Level Privacy
 
-Every entity, item, and location is an attribute bag. Each attribute carries its own visibility (`PUBLIC` or `PRIVATE`) with an explicit access list. "The sword is cursed" is a private attribute checked in code, not a rule the model is politely asked to honor. Privacy lives at the level of the fact, not the entity — a character can be publicly a blacksmith and privately a spy, and even facts about _itself_ are hidden from it unless explicitly granted (amnesia, repression, and unwitting sleeper agents come free with the model).
+Every entity, item, and location is an _attribute bag_. Each attribute carries its own visibility (`PUBLIC` or `PRIVATE`) with an explicit access list. "The sword is cursed" is a private attribute checked in code, not a rule the model is politely asked to honor. Privacy lives at the level of the fact, not the entity. A character can be publicly a blacksmith and privately a spy, and even facts about _itself_ are hidden from it unless explicitly granted (amnesia, repression, and unwitting sleeper agents come free with the model).
 
 The dividend: **prompt-injection-proof secrets.** There is no instruction to override because the information was never serialized into the prompt. Epistemic privacy turns "the model shouldn't say this" (hard, unreliable) into "the model doesn't know this" (trivial, absolute).
 
@@ -112,7 +154,7 @@ The finish line for the first milestone is small on purpose.
 
 - [x] Two hand-authored NPCs live in one location, playable via CLI.
 - [ ] Each has buffer and vector-archive memory and recalls something said a few turns earlier. _(buffer: done; vector archive: not started)_
-- [ ] One NPC knows a fact the other does not and, provably by testing, will not leak it.
+- [x] One NPC knows a fact the other does not and, provably by testing, will not leak it.
 - [x] The Architect processes at least one non-trivial action per exchange with a visible state change.
 - [x] The whole thing persists to a SQLite file and reloads identically.
 
@@ -138,13 +180,14 @@ omnia/
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
     scenario/    scenario JSON schema and loader (JSON → SQLite)
   apps/
-    cli/         the playable loop (human or LLM actors, --scenario / --play flags)
+    gui/         Next.js Web GUI dashboard and simulation runner
   content/
     demo/              bundled scenarios (talking-room)
   tests/
     integration/ cross-package tests against a mocked LLM
     evals/       deliberate real-API evaluation runs
-  docs/          Astro documentation site (→ web/docs/)
+  web/
+    docs/        Astro documentation site
 ```
 
 _The engine core deliberately knows nothing about domain content (stats, traits, genres). Scenarios are plain JSON the loader ingests; what an attribute means is the scenario's business, not the engine's._
