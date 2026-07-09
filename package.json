@@ -7,9 +7,11 @@
     "build": "tsc -b",
     "build:web": "pnpm --filter landing build",
     "build:docs": "pnpm --filter docs build",
-    "build:all": "pnpm build && pnpm build:web && pnpm build:docs",
+    "build:gui": "pnpm --filter @omnia/gui build",
+    "build:all": "pnpm build && pnpm build:web && pnpm build:docs && pnpm build:gui",
     "dev:web": "pnpm --filter landing dev",
     "dev:docs": "pnpm --filter docs dev",
+    "dev:gui": "pnpm --filter @omnia/gui dev",
     "clean": "git clean -xfd",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -18,8 +20,7 @@
     "watch": "tsc -b --watch",
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
-    "test:evals": "vitest run --project evals",
-    "play": "node cli/dist/index.js"
+    "test:evals": "vitest run --project evals"
   },
   "keywords": [],
   "author": "",

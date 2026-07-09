@@ -68,15 +68,29 @@ export class ActorAgent {
   private decoder: IntentDecoder;
   private generator: IActorProseGenerator;
 
+  private llmProvider: ILLMProvider;
+
   constructor(
-    private llmProvider: ILLMProvider,
+    llmProvider: ILLMProvider | { actor: ILLMProvider; decoder: ILLMProvider },
     bufferRepo?: BufferRepository,
     memoryLimit?: number,
     generator?: IActorProseGenerator,
   ) {
+    let actorProv: ILLMProvider;
+    let decoderProv: ILLMProvider;
+
+    if ("actor" in llmProvider && "decoder" in llmProvider) {
+      actorProv = llmProvider.actor;
+      decoderProv = llmProvider.decoder;
+    } else {
+      actorProv = llmProvider;
+      decoderProv = llmProvider;
+    }
+
     this.promptBuilder = new ActorPromptBuilder(bufferRepo, memoryLimit);
-    this.decoder = new IntentDecoder(llmProvider);
-    this.generator = generator ?? new LLMActorProseGenerator(llmProvider);
+    this.decoder = new IntentDecoder(decoderProv);
+    this.generator = generator ?? new LLMActorProseGenerator(actorProv);
+    this.llmProvider = actorProv;
   }
 
   /**

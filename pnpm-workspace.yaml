@@ -1,9 +1,8 @@
 packages:
   - "packages/*"
-  - "cli"
+  - "apps/*"
   - "web/*"
-  - "content/scenario-builder"
-  - "content/scenario-core"
+
 allowBuilds:
   better-sqlite3: true
   esbuild: true
