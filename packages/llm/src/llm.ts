@@ -43,4 +43,5 @@ export interface LLMProviderInstance {
   providerName: string;
   apiKey: string;
   isActive: boolean;
+  modelName?: string;
 }

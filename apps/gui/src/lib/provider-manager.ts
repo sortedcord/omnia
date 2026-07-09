@@ -19,9 +19,16 @@ function getSettingsDb() {
       name TEXT NOT NULL,
       providerName TEXT NOT NULL,
       apiKey TEXT NOT NULL,
-      isActive INTEGER NOT NULL DEFAULT 0
+      isActive INTEGER NOT NULL DEFAULT 0,
+      modelName TEXT
     )
   `).run();
+
+  try {
+    db.prepare(`ALTER TABLE provider_instances ADD COLUMN modelName TEXT`).run();
+  } catch {
+    // ignore
+  }
   
   return db;
 }
@@ -36,6 +43,7 @@ export class ProviderManager {
         providerName: string;
         apiKey: string;
         isActive: number;
+        modelName?: string;
       }[];
       return rows.map((r) => ({
         id: r.id,
@@ -43,13 +51,14 @@ export class ProviderManager {
         providerName: r.providerName,
         apiKey: r.apiKey,
         isActive: r.isActive === 1,
+        modelName: r.modelName || undefined,
       }));
     } finally {
       db.close();
     }
   }
 
-  static create(name: string, providerName: string, apiKey: string): LLMProviderInstance {
+  static create(name: string, providerName: string, apiKey: string, modelName?: string): LLMProviderInstance {
     const db = getSettingsDb();
     try {
       const id = "provider-" + Date.now();
@@ -57,11 +66,11 @@ export class ProviderManager {
       const isActive = activeCount.count === 0 ? 1 : 0;
       
       db.prepare(`
-        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(id, name, providerName, apiKey, isActive);
+        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(id, name, providerName, apiKey, isActive, modelName || null);
       
-      return { id, name, providerName, apiKey, isActive: isActive === 1 };
+      return { id, name, providerName, apiKey, isActive: isActive === 1, modelName };
     } finally {
       db.close();
     }
@@ -94,21 +103,21 @@ export class ProviderManager {
     }
   }
 
-  static update(id: string, name: string, providerName: string, apiKey?: string): void {
+  static update(id: string, name: string, providerName: string, apiKey?: string, modelName?: string): void {
     const db = getSettingsDb();
     try {
       if (apiKey && apiKey.trim()) {
         db.prepare(`
           UPDATE provider_instances
-          SET name = ?, providerName = ?, apiKey = ?
+          SET name = ?, providerName = ?, apiKey = ?, modelName = ?
           WHERE id = ?
-        `).run(name, providerName, apiKey, id);
+        `).run(name, providerName, apiKey, modelName || null, id);
       } else {
         db.prepare(`
           UPDATE provider_instances
-          SET name = ?, providerName = ?
+          SET name = ?, providerName = ?, modelName = ?
           WHERE id = ?
-        `).run(name, providerName, id);
+        `).run(name, providerName, modelName || null, id);
       }
     } finally {
       db.close();
@@ -124,6 +133,7 @@ export class ProviderManager {
         providerName: string;
         apiKey: string;
         isActive: number;
+        modelName?: string;
       } | undefined;
       if (!row) return null;
       return {
@@ -132,6 +142,7 @@ export class ProviderManager {
         providerName: row.providerName,
         apiKey: row.apiKey,
         isActive: true,
+        modelName: row.modelName || undefined,
       };
     } finally {
       db.close();

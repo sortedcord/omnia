@@ -31,6 +31,7 @@ export default function ConfigPage() {
   const [editName, setEditName] = useState("");
   const [editProvider, setEditProvider] = useState("google-genai");
   const [editKey, setEditKey] = useState("");
+  const [editModel, setEditModel] = useState("gemini-2.5-flash");
   const [editIsActive, setEditIsActive] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function ConfigPage() {
       setEditName("");
       setEditProvider("google-genai");
       setEditKey("");
+      setEditModel("gemini-2.5-flash");
       setEditIsActive(false);
     } else {
       const inst = instances.find((i) => i.id === selectedInstanceId);
@@ -45,6 +47,7 @@ export default function ConfigPage() {
         setEditName(inst.name);
         setEditProvider(inst.providerName);
         setEditKey("");
+        setEditModel(inst.modelName || "gemini-2.5-flash");
         setEditIsActive(inst.isActive);
       }
     }
@@ -104,13 +107,13 @@ export default function ConfigPage() {
           setLoading(false);
           return;
         }
-        const created = await createProviderInstance(editName, editProvider, editKey);
+        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined);
         if (editIsActive) {
           await setActiveProviderInstance(created.id);
         }
         setSelectedInstanceId(created.id);
       } else {
-        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined);
+        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined);
         if (editIsActive) {
           await setActiveProviderInstance(selectedInstanceId);
         }
@@ -248,6 +251,17 @@ export default function ConfigPage() {
                             : "•••••••• (unchanged)"
                         }
                         required={selectedInstanceId === "new"}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="formModel">Model Name</label>
+                      <input
+                        id="formModel"
+                        type="text"
+                        value={editModel}
+                        onChange={(e) => setEditModel(e.target.value)}
+                        placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
                       />
                     </div>
 

@@ -242,8 +242,9 @@ export async function createProviderInstance(
   name: string,
   providerName: string,
   apiKey: string,
+  modelName?: string,
 ): Promise<LLMProviderInstance> {
-  return ProviderManager.create(name, providerName, apiKey);
+  return ProviderManager.create(name, providerName, apiKey, modelName);
 }
 
 export async function deleteProviderInstance(id: string): Promise<void> {
@@ -259,8 +260,9 @@ export async function updateProviderInstance(
   name: string,
   providerName: string,
   apiKey?: string,
+  modelName?: string,
 ): Promise<void> {
-  ProviderManager.update(id, name, providerName, apiKey);
+  ProviderManager.update(id, name, providerName, apiKey, modelName);
 }
 
 export async function getProviderMappings(): Promise<Record<string, string>> {

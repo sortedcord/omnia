@@ -8,14 +8,14 @@ export class GeminiProvider implements ILLMProvider {
   private model: ChatGoogleGenerativeAI;
   lastCalls: LLMCallRecord[] = [];
 
-  constructor(apiKey?: string) {
+  constructor(apiKey?: string, modelName?: string) {
     const key = apiKey || llmConfig.GOOGLE_API_KEY;
     if (!key) {
       throw new Error("GOOGLE_API_KEY is required to initialize GeminiProvider");
     }
     this.model = new ChatGoogleGenerativeAI({
       apiKey: key,
-      model: "gemini-2.5-flash",
+      model: modelName || "gemini-2.5-flash",
     });
   }
 
