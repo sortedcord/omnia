@@ -11,7 +11,7 @@ import {
   setProviderMapping,
   updateProviderInstance,
 } from "@/app/play/actions";
-import type { LLMProviderInstance } from "@/lib/provider-manager";
+import type { LLMProviderInstance } from "@omnia/llm";
 
 interface ConfigStatus {
   apiKeySet: boolean;

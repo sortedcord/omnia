@@ -13,7 +13,7 @@ import {
   listProviderInstances,
 } from "@/app/play/actions";
 import type { SimSnapshot } from "@/lib/simulation-types";
-import type { LLMProviderInstance } from "@/lib/provider-manager";
+import type { LLMProviderInstance } from "@omnia/llm";
 
 function IntentTag({
   intent,

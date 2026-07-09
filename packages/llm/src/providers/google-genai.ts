@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord } from "../llm.js";
 import { llmConfig } from "../config.js";
+import { ProviderManager } from "../provider-manager.js";
 
 export class GeminiProvider implements ILLMProvider {
   providerName = "Gemini";
@@ -9,13 +10,30 @@ export class GeminiProvider implements ILLMProvider {
   lastCalls: LLMCallRecord[] = [];
 
   constructor(apiKey?: string, modelName?: string) {
-    const key = apiKey || llmConfig.GOOGLE_API_KEY;
+    let key = apiKey;
+    let model = modelName;
+
+    if (!key) {
+      const active = ProviderManager.getActive();
+      if (active) {
+        key = active.apiKey;
+        if (!model) {
+          model = active.modelName;
+        }
+      }
+    }
+
+    if (!key) {
+      key = llmConfig.GOOGLE_API_KEY;
+    }
+
     if (!key) {
       throw new Error("GOOGLE_API_KEY is required to initialize GeminiProvider");
     }
+
     this.model = new ChatGoogleGenerativeAI({
       apiKey: key,
-      model: modelName || "gemini-2.5-flash",
+      model: model || "gemini-2.5-flash",
     });
   }
 

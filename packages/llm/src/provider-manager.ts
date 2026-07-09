@@ -1,12 +1,27 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import type { LLMProviderInstance } from "@omnia/llm";
+import type { LLMProviderInstance } from "./llm.js";
 
-export type { LLMProviderInstance };
+function getWorkspaceRoot() {
+  let current = process.cwd();
+  while (current !== "/" && current !== path.parse(current).root) {
+    if (
+      fs.existsSync(path.join(current, "pnpm-workspace.yaml")) ||
+      fs.existsSync(path.join(current, "package.json"))
+    ) {
+      if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) {
+        return current;
+      }
+    }
+    current = path.dirname(current);
+  }
+  return process.cwd();
+}
 
 function getSettingsDb() {
-  const dbDir = path.resolve(process.cwd(), "data");
+  const wsRoot = getWorkspaceRoot();
+  const dbDir = path.resolve(wsRoot, "data");
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
@@ -127,6 +142,7 @@ export class ProviderManager {
   static getActive(): LLMProviderInstance | null {
     const db = getSettingsDb();
     try {
+      // Query the DB
       const row = db.prepare(`SELECT * FROM provider_instances WHERE isActive = 1`).get() as {
         id: string;
         name: string;
@@ -135,7 +151,34 @@ export class ProviderManager {
         isActive: number;
         modelName?: string;
       } | undefined;
-      if (!row) return null;
+
+      if (!row) {
+        // Check if there are any rows at all
+        const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
+        if (totalCount.count === 0) {
+          // Database is completely empty! Check if GOOGLE_API_KEY env is set.
+          const envKey = process.env.GOOGLE_API_KEY;
+          if (envKey && envKey.trim()) {
+            // Auto-bootstrap default active instance from env
+            const id = "provider-default-env";
+            db.prepare(`
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `).run(id, "Default (Env)", "google-genai", envKey, 1, "gemini-2.5-flash");
+
+            return {
+              id,
+              name: "Default (Env)",
+              providerName: "google-genai",
+              apiKey: envKey,
+              isActive: true,
+              modelName: "gemini-2.5-flash",
+            };
+          }
+        }
+        return null;
+      }
+
       return {
         id: row.id,
         name: row.name,
@@ -144,6 +187,20 @@ export class ProviderManager {
         isActive: true,
         modelName: row.modelName || undefined,
       };
+    } catch {
+      // Lock or write issue fallback: return an in-memory active key if env key exists
+      const envKey = process.env.GOOGLE_API_KEY;
+      if (envKey) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "Default (Env Fallback)",
+          providerName: "google-genai",
+          apiKey: envKey,
+          isActive: true,
+          modelName: "gemini-2.5-flash",
+        };
+      }
+      return null;
     } finally {
       db.close();
     }

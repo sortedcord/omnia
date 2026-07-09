@@ -25,9 +25,8 @@ import {
   IActorProseGenerator,
   buildBufferEntryForIntent,
 } from "@omnia/actor";
-import { GeminiProvider, ILLMProvider, MockLLMProvider } from "@omnia/llm";
+import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager } from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
-import { ProviderManager } from "./provider-manager";
 
 import type {
   IntentInfo,

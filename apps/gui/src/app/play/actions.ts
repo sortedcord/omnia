@@ -4,8 +4,7 @@ import path from "path";
 import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
-import { ProviderManager } from "@/lib/provider-manager";
-import type { LLMProviderInstance } from "@/lib/provider-manager";
+import { ProviderManager, LLMProviderInstance } from "@omnia/llm";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
