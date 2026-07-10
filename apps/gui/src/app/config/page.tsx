@@ -206,15 +206,15 @@ export default function ConfigPage() {
     <div className="mx-auto max-w-[800px] px-4 py-8">
       <h1 className="mb-6 text-2xl">Configuration</h1>
 
-      {loading && <p>Loading configuration...</p>}
+      {config === null && loading && <p>Loading configuration...</p>}
       {error && (
         <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {config && !loading && (
-        <>
+      {config && (
+        <div className={loading ? "opacity-60 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
           <section className="mb-8 pb-6">
             <h2 className="mb-3 text-lg">LLM Provider Instances</h2>
             <div className="mt-4 grid min-h-[400px] grid-cols-1 overflow-hidden rounded-xl border border-gray-200 bg-white md:grid-cols-[30%_70%]">
@@ -513,7 +513,7 @@ export default function ConfigPage() {
               </table>
             )}
           </section>
-        </>
+        </div>
       )}
     </div>
   );
