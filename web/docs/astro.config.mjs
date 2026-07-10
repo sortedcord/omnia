@@ -10,6 +10,7 @@ export default defineConfig({
     mermaid(),
     starlight({
       title: "Omnia Docs",
+      favicon: "/favicon.png",
       logo: {
         src: "./src/assets/img/logo.png",
         replacesTitle: true,
