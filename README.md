@@ -47,13 +47,13 @@ Omnia answers every one of these failures with the same move: **pull the thing t
 The payoff is scenario complexity that **uni-agent systems structurally cannot represent, no matter how good the model gets**.
 
 - **Real secrets, real dramatic irony.** One NPC knows the sword is cursed; the other does not. This holds for hundreds of turns not because the model is disciplined, but because the second NPC's prompts are constructed from an attribute set that simply does not contain the fact. Leaking it would require the engine to have handed it over.
-- **Genuine deception between characters.** Because each character acts from its own bounded view, characters can lie to each other and be believed; with the truth intact in the world state. A con game, a mole in the party, an unreliable ally: these are queries over "who knows what" and not prompt engineering.
+- **Genuine deception between characters.** Because each entity acts from its own bounded view, they can lie to each other and be believed; with the truth intact in the world state. A con game, a mole in the party, an unreliable ally: these are queries over "who knows what" and not prompt engineering.
 - Events persist as per observer memory entries with outcomes. An apology adds a memory; it does not delete one.
-- **Divergent accounts of the same event.** Two witnesses to the same scene hold two different buffer entries, filtered through their own aliases and vantage points. Ask them separately what happened and you get testimony, not a transcript.
-- **A physics referee that can say no.** "I pick the lock with a hairpin" is validated against world state by the Architect before anything changes. Failure is a recorded outcome the character remembers, not a narrative the model politely retconned.
-- **Time that behaves.** A world clock advances by validated, per-action deltas, and memory is recalled with psychologically natural phrasing ("earlier today, in the afternoon" — not a timestamp). Long timelines stay coherent because time is data, not vibes.
-- **No main character syndrome.** The simulation runs fully autonomously or you act on behalf of any entity — you, the player, are just an entity in the data model, not structurally elevated above the rest of the world. The world can exist without the main character.
-- **Granular model control.** Omnia is not locked to a single LLM. You pick the model — and not just globally. **Every individual step that calls the LLM can be assigned its own model**. Narration prose that demands richer reasoning gets a frontier model; quick intent decoding or other generators get a smaller, faster, cheaper one — or a model running entirely on your local machine.
+- **Divergent accounts of the same event.** Two witnesses to the same scene hold two different buffer entries, filtered through their own aliases and vantage points. Ask them separately what happened and you get varied testimony.
+- **A physics referee that can say no.** `I pick the lock with a hairpin` is validated against world state by the Architect before anything changes. Failure is a recorded outcome the entity remembers.
+- **Time that behaves.** A world clock advances by validated, per-action deltas, and memory is recalled with psychologically natural phrasing ("earlier today, in the afternoon" — not a timestamp). `TimeOfDay` is deterministic and not based on vibes.
+- **No main character syndrome.** The simulation runs fully autonomously or you act on behalf of any entity. You, the player, are just an entity in the data model, not structurally elevated above the rest of the world. The world can exist without the you.
+- **Granular model control.** Omnia is not locked to a single LLM. You can pick a different model for **every individual step that calls the LLM**. Narration prose that demands richer reasoning gets a frontier model; quick intent decoding or other generators get smaller ones or a model running entirely on your local machine.
 
 The general principle: **anything that must remain true is state; the model only ever supplies behavior.**
 
@@ -91,7 +91,7 @@ Access the application locally at `http://localhost:3000`.
 
 ### The Actor Agent
 
-Each character takes turns through an **Actor Agent** that receives a strictly epistemically-bounded prompt: its own attributes (public, plus private ones explicitly granted to itself), its subjective memory buffer, the entities co-present at its location, and the current moment. Nothing else. The actor responds with free narrative prose — what the character does, says, or _thinks_.
+Each entity takes turns through an **Actor Agent** that receives a strictly epistemically bounded prompt: its own attributes (public, plus private ones explicitly granted to itself), its subjective memory buffer, the entities co-present at its location, and the current moment. Nothing else. The actor responds with free narrative prose.
 
 Prose is decoded into typed intents:
 
@@ -99,9 +99,9 @@ Prose is decoded into typed intents:
 - **`action`** — a physical act, subject to validation.
 - **`monologue`** — an inner thought. No one else perceives it, it bypasses validation entirely, and it is written straight into the character's private memory.
 
-Not every turn needs an outward act; a character may simply think. This is what makes characters feel inhabited rather than reactive — and it produces a durable, queryable record of each character's private reasoning (see [Research Instrument](#a-research-instrument-model-psychology-in-fiction) below).
+Not every turn needs an outward act; a character may simply think. This is what makes characters feel inhabited rather than reactive and it produces a queryable record of each character's private reasoning (see [Research Instrument](#a-research-instrument-model-psychology-in-fiction) below).
 
-The prose generator is pluggable (`IActorProseGenerator`): the same turn loop runs an LLM-driven NPC or a human at a CLI prompt, identically bounded by what their character knows.
+The prose generator is pluggable (`IActorProseGenerator`): the same turn loop runs an LLM driven NPC or a human, identically bounded by what their character knows. (This is what eliminates Main Character Syndrome)
 
 ### Intents & The World Architect
 
@@ -117,11 +117,11 @@ The dividend: **prompt-injection-proof secrets.** There is no instruction to ove
 
 ### Spatial Perception
 
-Space is a graph: `world → region → location → point of interest`, connected by portals with sound and vision propagation values. When something happens, it bubbles outward. There are no coordinates, no pathfinding, no collision geometry — a narrative engine doesn't need a tactical simulation, and a discrete graph is sufficient. Today actors perceive co-located entities and their location's visible attributes; portal-propagated perception is on the roadmap.
+Space is a graph: `world → region → location → point of interest`, connected by portals with sound and vision propagation values. When something happens, it bubbles outward. There are no coordinates, no pathfinding, no collision geometry — a narrative engine doesn't need a tactical simulation, and a discrete graph is sufficient. Today actors perceive co-located entities and their location's visible attributes; portal propagated perception is on the roadmap.
 
 ### Memory Tiers
 
-- **Verbatim Buffer (implemented):** Per-character subjective event log. Every entry is stored from the owner's perspective — actors resolved through the owner's alias map, outcomes attached — and recalled with naturalized time phrasing.
+- **Verbatim Buffer (implemented):** Per-character subjective event log. Every entry is stored from the owner's perspective actors resolved through the owner's alias map, outcomes attached — and recalled with naturalized time phrasing.
 - **Vector Archive (planned):** Summarized, embedded memory entries for semantic retrieval, keeping verbatim quotes only for high-salience lines.
 - **Dossier (planned):** Each observer's subjective beliefs about another character.
 
@@ -131,16 +131,20 @@ Memory is per-character on purpose: recall is testimony from a vantage point, wh
 
 Rather than a scalar the model drifts, every significant interaction becomes a ledger entry with an affect vector across OCC-derived dimensions (plus arousal, dominance, and social drive). The model judges a single moment; deterministic code aggregates the ledger over time with decay and attention weighting. A character can be simultaneously furious about one thing and grateful for another, and an apology does not silently erase a betrayal.
 
+This however is something that I haven't implementing or plan to implement anytime soon. The mathematical models described in NLAVS is still very abstract and subject to a lot of changes. CAA and RepE is still cutting edge research that I'm still reading papers about.
+
+Omnia might get an affect vector system however, it's going to be more simplistic than what the NLAVS proposal scribbles down.
+
 ## A Research Instrument: Model Psychology in Fiction
 
-Omnia's architecture doubles as an apparatus for studying how language models behave _as characters_ under controlled epistemic conditions — something uni-agent setups cannot do, because they can neither control what the model knows nor observe what it withholds.
+Omnia's architecture doubles as an apparatus for studying how language models behave _as characters_ under controlled epistemic conditions.
 
-- **A window into private reasoning.** Monologue intents are the model's in-character thoughts: unperceived by other agents, exempt from validation, but durably logged. You can directly compare what a character _thinks_ against what it _says and does_ — measuring deception, self-consistency, motivated reasoning, or the gap between private appraisal and public behavior.
-- **Knowledge as an experimental variable.** Attribute ACLs let you administer information with precision: give one agent a fact, withhold it from another, and observe propagation, inference, and leakage through dialogue alone. Secret-keeping stops being anecdotal and becomes testable — _provably_, since the engine logs exactly what each agent was ever shown.
-- **Controlled, reproducible conditions.** A scenario is a JSON file; a run is a SQLite database. Identical initial conditions, swappable model providers behind one interface (`ILLMProvider`), and a deterministic mock for baselines. Rerun the white-room experiment a hundred times, vary one attribute, and diff the transcripts.
-- **Multi-agent social dynamics with ground truth.** Because objective world state exists independently of any agent's beliefs, you can score agents' beliefs and claims against reality — hallucination, confabulation, and social conformity become measurable quantities rather than impressions.
+- **A window into private reasoning.** Monologue intents are the model's in character thoughts: unperceived by other agents, exempt from validation, but durably logged. You can directly compare what a character _thinks_ against what it _says and does_: measuring deception, self-consistency, motivated reasoning, etc.
+- **Knowledge as an experimental variable.** Attribute ACLs let you administer information with precision: give one agent a fact, withhold it from another, and observe propagation, inference, and leakage through dialogue alone.
+- **Controlled, reproducible conditions.** A scenario is a JSON file (like a template); a run is a SQLite database. Identical initial conditions, swappable model providers behind one interface (`ILLMProvider`), and a deterministic mock for baselines. Rerun the scenario a hundred times, vary one attribute, and diff the transcripts.
+- **Multi agent social dynamics with ground truth.** Because objective world state exists independently of any agent's beliefs, you can score agents' beliefs and claims against reality like hallucination. Even social conformity become measurable quantities rather than impressions or _✨ vibes_.
 
-The bundled demo scenario is exactly this: [`talking-room`](./content/demo/scenarios/talking-room.json) places two memory-wiped subjects in a featureless white room — each knowing their own name but not the other's — and observes what they do. It runs today, via the CLI, with a human optionally playing either subject.
+The bundled demo scenario is exactly this: [`talking-room`](./content/demo/scenarios/talking-room.json) places two memory wiped subjects in a featureless white room. Each know their own name but not the other's. Observe what they do. It runs today, ~~via the CLI, with a human optionally playing either subject~~ via a GUI which is in rapid development. You can let it run forever autonomously or roleplay as either character.
 
 ## Project Status: What `v0` Means
 
@@ -164,11 +168,11 @@ The finish line for the first milestone is small on purpose.
 - [x] The Architect processes at least one non-trivial action per exchange with a visible state change.
 - [x] The whole thing persists to a SQLite file and reloads identically.
 
-**Explicitly out of scope for `v0`:** Constraint validators (beyond basic sense-checking), multi-location perception, affect-vector decay math, the Dossier, whims/simulation tiering, the delta ledger, and UI beyond CLI.
+**Explicitly out of scope for `v0`:** Constraint validators (beyond basic sense-checking), multi-location perception, affect-vector decay math, the Dossier, whims/simulation tiering, the delta ledger.
 
 ### A Note on Tech Debt
 
-The Architect currently trusts an LLM's judgement about reasonable consequences rather than validating every change against declarative constraints. A general constraint solver is worth building eventually, but building it before anything is playable is foundational perfectionism that produces beautiful architecture and no game. `v0` keeps the single-call Architect on purpose.
+The Architect currently trusts an LLM's judgement about reasonable consequences rather than validating every change against declarative constraints. A general constraint solver is worth building eventually, but building it before anything is playable is foundational perfectionism that produces beautiful architecture and no framework. `v0` keeps the single-call Architect on purpose.
 
 ## Repository Layout
 
@@ -195,8 +199,6 @@ omnia/
   web/
     docs/        Astro documentation site
 ```
-
-_The engine core deliberately knows nothing about domain content (stats, traits, genres). Scenarios are plain JSON the loader ingests; what an attribute means is the scenario's business, not the engine's._
 
 ## Roadmap (Build Order after `v0`)
 
