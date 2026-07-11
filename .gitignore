@@ -60,3 +60,5 @@ data/
 
 # Vercel
 .vercel
+
+__local_notes/

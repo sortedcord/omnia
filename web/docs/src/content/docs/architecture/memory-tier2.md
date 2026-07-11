@@ -1,32 +1,38 @@
 ---
-title: Tier 2 Memory (Ledger)
-description: Long-term episodic memory storage and retrieval
+title: Tier 2 Memory (Long-Term Ledger)
+description: Persistent episodic memory storage, semantic indexing, and retrieval mechanics
 ---
 
-Tier 2 memory lives in between the memory buffer and tier 3 dossiers and arguably takes up the largest share of the context pie.
+**Tier 2 Memory (the Ledger)** represents an entity's long-term episodic memory. It archives historical summaries of past events, providing a persistent record of character experiences that can be retrieved and injected into LLM prompts as needed.
 
-Tier 2 memory (or long-term memory) stores historical events that happened to the entity in the past. It acts as an episodic ledger.
+---
+
+## 1. Data Model
+
+A long-term memory is represented by a `LedgerEntry`. It includes metadata for deterministic database-level filtering, structured narrative content, and vector embeddings for semantic similarity scoring.
 
 ```ts
 interface LedgerEntry {
   id: string;
-  ownerId: string; // whose subjective memory this belongs to
-  timestamp: string; // ISO, tied to WorldClock when the intent causing the event happened.
-  locationId: string | null; // where it happened
-  involvedEntityIds: string[]; // who else this event concerns
+  ownerId: string; // The entity to whom this subjective memory belongs
+  timestamp: string; // ISO timestamp matching the WorldClock at event time
+  locationId: string | null; // Location where the event transpired
+  involvedEntityIds: string[]; // Other entity IDs present during the event
 
-  content: string; // third-person narrative summary — recallable
-  quotes: string[]; // verbatim lines, only for high-salience dialogue
-  importance: number; // 1–10, salience assigned at handoff
-  embedding: number[]; // for semantic search (storage representation TBD at build time)
+  content: string; // Third-person narrative summary of the event
+  quotes: string[]; // Verbatim dialogue lines of high narrative salience
+  importance: number; // Salience score from 1 (trivial) to 10 (life-altering)
+  embedding: number[]; // 768-dimensional vector embedding of the content
 }
 ```
 
-### Storage Model
+---
 
-Tier 2 memory is stored in relational tables to allow efficient deterministic filtering. Embeddings are stored as raw BLOBs (containing a serialized `Float32Array`). 
+## 2. Storage Model
 
-To avoid the build and installation friction associated with native C-extensions like `sqlite-vec` (e.g. node-gyp issues across platforms), index optimization relies on standard SQLite secondary indices. These indices allow database queries to execute in microseconds, even with hundreds of thousands of memories:
+To support fast, low-latency queries across large historical datasets, Tier 2 memory is stored in standard SQLite tables. Vector embeddings are stored in raw binary format as `Float32Array` BLOBs.
+
+Standard secondary indices optimize query execution time to microseconds, eliminating the compilation and cross-platform installation overhead of native vector database extensions (such as `sqlite-vec` or `node-gyp` binaries).
 
 ```sql
 CREATE TABLE IF NOT EXISTS ledger_entries (
@@ -54,59 +60,78 @@ CREATE INDEX IF NOT EXISTS idx_ledger_importance ON ledger_entries(importance);
 CREATE INDEX IF NOT EXISTS idx_ledger_involved_entity ON ledger_involved_entities(entity_id);
 ```
 
-### Handoff (Deferred)
+---
 
-The process of moving memories from the Tier 1 working buffer into Tier 2 is called **Handoff**. 
-During handoff, an LLM chunk-summarizes raw buffer events, extracts salient quotes, and assigns an `importance` score (1-10). Routine actions score low, while life-altering events score high.
+## 3. The Handoff Pipeline
 
-Because this summarization requires an LLM call, it utilizes the standard `LLMProviderInstance` inference provider routing architecture just like all other callers in the system. This allows the simulation to route handoff processing to a specific model.
+Working memory (Tier 1 Buffer) entries are promoted to the Ledger through the automated [Handoff Pipeline](./handoff). 
 
-*Note: The automated handoff pipeline is currently deferred for future implementation.*
+During handoff:
+1. Candidate entries are clustered into narrative beats.
+2. Ambient stage business and redundant details are pruned.
+3. Chunks are synthesized into third-person summaries and assigned importance scores.
+4. Text embeddings are generated for the summary.
+5. The processed memories are committed to the SQLite store, and the short-term buffer is pruned.
 
-### Retrieval Architecture
+---
 
-Retrieval happens in phases to manage context window limits without running expensive vector searches across an entity's entire lifetime of memories.
+## 4. Retrieval Architecture
 
-#### Phase 1: Deterministic Heuristic Filtering
+To prevent context window overflow and contain inference costs, memory retrieval is split into a fast database query phase followed by an in-memory ranking phase.
 
-This is the primary database-level retrieval mechanism. We use fast SQL queries to filter down to a relevant candidate pool based on immediate context:
+```mermaid
+flowchart TD
+    A[Start Retrieval] --> B[Phase 1: SQL Filter]
+    B -->|Filter by Location, Co-located Entities, and High Salience| C[Candidate Pool]
+    C --> D[Phase 2: In-Memory Ranker]
+    D -->|1. Cosine Similarity| E[Relevance Scores]
+    D -->|2. Exponential Recency Decay| F[Recency Scores]
+    E & F --> G[Compute Combined Score]
+    G --> H[Chronological Associative Chaining]
+    H --> I[Format Prompt Section]
+```
 
-1. **Spatial Cues**: Fetch recent memories where `location_id` equals the entity's current location.
-2. **Social Cues**: Fetch recent memories involving the `involvedEntityIds` currently in the entity's perception radius.
-3. **High Salience**: Always fetch memories with `importance >= 8` regardless of spatial or social context.
+### Phase 1: Deterministic Heuristic Filtering
+The primary selection uses indexes to retrieve a candidate pool (capped at 100 entries) from the database:
+1. **Spatial Cues**: Fetch entries matching the character's current `locationId`.
+2. **Social Cues**: Fetch entries where `involvedEntityIds` intersects with entities currently inside the character's perception radius.
+3. **High Salience**: Always retrieve high-salience entries where `importance >= 8`.
 
-#### Phase 2: Semantic & Episodic Ranking
+### Phase 2: Semantic & Episodic Ranking
+Once the candidate pool is loaded, the ranking engine evaluates entries in application memory:
+1. **Semantic Similarity**: Cosine similarity is computed directly in JS/TS memory between the current prompt context and the candidate embeddings.
+2. **Multi-Factor Scoring**: Candidates are ranked using a weighted linear combination:
+   $$\text{Score} = (\alpha \times \text{recency}) + (\beta \times \text{importance}) + (\gamma \times \text{relevance})$$
+   * **Recency** is modeled via exponential decay based on elapsed simulation hours: $\text{decayRate}^{\text{hoursElapsed}}$.
+   * **Importance** is the normalized salience score (1-10) assigned during handoff.
+   * **Relevance** is the cosine similarity score.
+3. **Chronological Associative Chaining**: When a memory is selected, the system automatically pulls in its adjacent chronological neighbors (preceding and succeeding ledger entries) to preserve episodic continuity in the prompt.
 
-This phase runs in application memory using the candidates returned from Phase 1:
+---
 
-1. **Semantic Match**: Compute cosine similarity dynamically in JS/TS memory over the candidate pool (limit 100). Since Phase 1 narrows the pool down significantly, vector comparisons are highly performant in JS, eliminating the need for native vector database extensions.
-2. **Scoring Combination**: Combine recency, importance, and semantic match:
-   $$\text{Score} = (\text{recencyWeight} \times \text{recency}) + (\text{importanceWeight} \times \text{importanceNorm}) + (\text{relevanceWeight} \times \text{relevance})$$
-   Where `recency` uses an exponential decay based on elapsed hours ($\text{decayRate}^{\text{hoursElapsed}}$).
-3. **Associative Chain**: When a memory is selected, automatically pull in its immediate chronological neighbors (preceding and succeeding ledger entries) to preserve episodic continuity (mirroring how remembering one event triggers the memory of what happened right after).
+## 5. Active Focus & Attention Loop
 
-### Retrieval Triggers & Active Focus
+In crowded settings (e.g., a room with many characters), retrieving long-term memories for all co-located entities would exhaust the prompt context window. To prevent this, retrieval uses an **Active Focus** selection strategy:
 
-In crowded locations (e.g. a tavern with 15 other characters), retrieving memories for all co-located entities simultaneously would cause **context explosion**. To prevent this, Omnia utilizes an **Active Focus** trigger strategy:
+* **Active Focus Set**: The prompt builder scans the last 10 entries of the character's working memory buffer. Any entity targeted by, spoken to, or mentioned in these entries is added to the Active Focus set.
+* **Dynamic Capacity Limits**:
+  * If the number of co-located characters is small ($\le 3$), long-term memory is retrieved for all of them.
+  * If the environment is crowded ($> 3$), long-term retrieval is strictly restricted to the top 3 characters in the Active Focus set.
+* This creates a realistic attention loop: when a new character interacts with the actor, they enter the working buffer, triggering the retrieval of their long-term history on the subsequent turn.
 
-- **Active Focus Scanning**: The prompt builder scans the last 10 entries of the entity's recent working memory (Tier 1 Buffer). Any character that the actor has recently spoken to, thought about, or was targeted by is placed in the "Active Focus" set.
-- **Dynamic Thresholding**: 
-  - If the number of co-located entities is small ($\le 3$), long-term memory is retrieved for all of them.
-  - If the location is crowded ($> 3$ entities), the system **strictly** limits long-term retrieval to the top 3 characters in "Active Focus".
-- This creates a natural attention loop. When a new character interacts with the actor, they immediately enter "Active Focus" in the buffer, triggering the retrieval of their long-term history on the subsequent turn.
+---
 
-### Integration into Prompts
+## 6. Prompt Formatting
 
-Recalled entries are formatted into the prompt using chronological relative time grouping. System-level metrics like salience/importance scores are omitted to preserve immersion, and system UUIDs are mapped to subjective aliases.
+Retrieved ledger entries are formatted into the prompt chronologically and mapped to subjective aliases. Internal metrics (e.g., importance numbers and raw system IDs) are omitted to preserve immersion.
 
-To frame the prompt naturally:
-1. Tier 1 working buffer entries are presented under the header `=== RECENT EVENTS ===`, referring strictly to events happening in the present narrative context.
-2. Tier 2 recalled entries are presented under the header `=== YOUR MEMORIES ===`, framing them simply as the entity's memories.
+* Working memory entries are injected under `=== RECENT EVENTS ===` (narrated relative to the present moment).
+* Recalled ledger entries are injected under `=== YOUR MEMORIES ===` (presented as long-term recollections).
 
 ```text
 === RECENT EVENTS ===
 Moments ago
-  - you spoke to Strider: "Hello there"
+  - You spoke to Strider: "Hello there"
 
 === YOUR MEMORIES ===
 A couple days ago
