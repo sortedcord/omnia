@@ -14,6 +14,26 @@ import {
   regenerateEmbeddings,
 } from "@/app/play/actions";
 import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ConfigStatus {
   apiKeySet: boolean;
@@ -244,13 +264,13 @@ export default function ConfigPage() {
                   <h3 className="m-0 text-[0.95rem] font-semibold text-[#111]">
                     Instances
                   </h3>
-                  <button
+                  <Button
                     onClick={() => setSelectedInstanceId("new")}
-                    className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
-                    type="button"
+                    size="sm"
+                    className="bg-emerald-500 text-white hover:bg-emerald-600"
                   >
                     + Add
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex flex-1 flex-col overflow-y-auto">
                   {instances.length === 0 ? (
@@ -273,10 +293,10 @@ export default function ConfigPage() {
                         </div>
                         <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
                           <span>{inst.providerName} ({inst.type || "generative"})</span>
-                          {inst.isActive && (
-                            <span className="rounded-full bg-green-100 px-1.5 py-[1px] text-[0.65rem] font-semibold text-green-700">
+                            {inst.isActive && (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
                               Active
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -301,63 +321,53 @@ export default function ConfigPage() {
                       </h3>
 
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="formName" className="text-xs font-medium text-gray-700">
-                          Friendly Name
-                        </label>
-                        <input
+                        <Label htmlFor="formName">Friendly Name</Label>
+                        <Input
                           id="formName"
-                          type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
                           placeholder="e.g. Gemini - Production"
                           required
-                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                         />
                       </div>
 
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="formType" className="text-xs font-medium text-gray-700">
-                          Instance Type
-                        </label>
-                        <select
-                          id="formType"
-                          value={editType}
-                          onChange={(e) => handleTypeChange(e.target.value as "generative" | "embedding")}
-                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                        >
-                          <option value="generative">Generative (Chat / Text Completion)</option>
-                          <option value="embedding">Embedding (Vector generation)</option>
-                        </select>
+                        <Label>Instance Type</Label>
+                        <Select value={editType} onValueChange={(v) => handleTypeChange(v as "generative" | "embedding")}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="generative">Generative (Chat / Text Completion)</SelectItem>
+                            <SelectItem value="embedding">Embedding (Vector generation)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="formProvider" className="text-xs font-medium text-gray-700">
-                          Provider Type
-                        </label>
-                        <select
-                          id="formProvider"
-                          value={editProvider}
-                          onChange={(e) => handleProviderChange(e.target.value)}
-                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                        >
-                          {availableProviders.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.displayName}
-                            </option>
-                          ))}
-                        </select>
+                        <Label>Provider Type</Label>
+                        <Select value={editProvider} onValueChange={handleProviderChange}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableProviders.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.displayName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         {editProvider && availableProviders.length > 0 && (
-                          <span className="mt-1 block rounded border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-600">
+                          <span className="mt-1 block rounded border border-2 bg-muted px-3 py-2 text-xs text-muted-foreground">
                             {availableProviders.find((p) => p.id === editProvider)?.description}
                           </span>
                         )}
                       </div>
 
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="formKey" className="text-xs font-medium text-gray-700">
-                          API Key
-                        </label>
-                        <input
+                        <Label htmlFor="formKey">API Key</Label>
+                        <Input
                           id="formKey"
                           type="password"
                           value={editKey}
@@ -368,76 +378,65 @@ export default function ConfigPage() {
                               : "•••••••• (unchanged)"
                           }
                           required={selectedInstanceId === "new"}
-                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                         />
                       </div>
 
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="formModel" className="text-xs font-medium text-gray-700">
-                          Model Name
-                        </label>
-                        <input
+                        <Label htmlFor="formModel">Model Name</Label>
+                        <Input
                           id="formModel"
-                          type="text"
                           value={editModel}
                           onChange={(e) => setEditModel(e.target.value)}
                           placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
-                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                         />
                       </div>
 
                       {editType === "generative" && (
                         <div className="flex flex-col gap-1.5">
-                          <label htmlFor="formMaxContext" className="text-xs font-medium text-gray-700">
-                            Max Context Length (Tokens, 0 for infinite)
-                          </label>
-                          <input
+                          <Label htmlFor="formMaxContext">Max Context Length (Tokens, 0 for infinite)</Label>
+                          <Input
                             id="formMaxContext"
                             type="number"
                             value={editMaxContext}
                             onChange={(e) => setEditMaxContext(parseInt(e.target.value) || 0)}
                             min={0}
                             placeholder="e.g. 32768"
-                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                           />
                         </div>
                       )}
 
                       <div className="mt-1 flex flex-row items-center gap-2">
-                        <input
+                        <Checkbox
                           id="formActive"
-                          type="checkbox"
                           checked={editIsActive}
-                          onChange={(e) => setEditIsActive(e.target.checked)}
-                          className="h-4 w-4 cursor-pointer"
+                          onCheckedChange={(v) => setEditIsActive(v === true)}
                         />
-                        <label htmlFor="formActive" className="cursor-pointer text-xs font-medium text-gray-700">
+                        <Label htmlFor="formActive" className="cursor-pointer">
                           Set as Active Instance
-                        </label>
+                        </Label>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+                    <div className="flex items-center justify-between border-t-2 bg-muted/50 px-6 py-4">
                       <div>
                         {selectedInstanceId !== "new" && (
-                          <button
+                          <Button
                             type="button"
+                            variant="destructive"
                             onClick={handleDelete}
                             disabled={loading}
-                            className="cursor-pointer rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                           >
                             Delete
-                          </button>
+                          </Button>
                         )}
                       </div>
                       <div>
-                        <button
+                        <Button
                           type="submit"
                           disabled={loading}
-                          className="cursor-pointer rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
                         >
                           {loading ? "Saving..." : "Save"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </form>
@@ -464,20 +463,20 @@ export default function ConfigPage() {
               ].map((task) => (
                 <div
                   key={task.key}
-                  className="flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  className="flex flex-col justify-between gap-3 rounded-lg border-2 bg-card p-4"
                 >
                   <div className="flex flex-col gap-1 text-xs">
-                    <strong className="text-sm text-[#111]">
+                    <strong className="text-sm text-foreground">
                       {task.label}
                     </strong>
-                    <span className="mt-0.5 text-gray-500">{task.desc}</span>
+                    <span className="mt-0.5 text-muted-foreground">{task.desc}</span>
                   </div>
                   <select
                     value={mappings[task.key] || ""}
                     onChange={(e) =>
                       handleUpdateMapping(task.key, e.target.value)
                     }
-                    className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
+                    className="w-full rounded border-2 bg-input px-2 py-1.5 text-xs shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <option value="">-- Use Active Key (Default) --</option>
                     {instances
@@ -504,30 +503,26 @@ export default function ConfigPage() {
                 .
               </p>
             ) : (
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className="border-b-2 border-gray-200 p-2 text-left font-medium text-gray-500">
-                      Name
-                    </th>
-                    <th className="border-b-2 border-gray-200 p-2 text-left font-medium text-gray-500">
-                      Path
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Path</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {config.availableScenarios.map((s) => (
-                    <tr key={s.path}>
-                      <td className="border-b border-gray-100 p-2">{s.name}</td>
-                      <td className="border-b border-gray-100 p-2">
+                    <TableRow key={s.path}>
+                      <TableCell>{s.name}</TableCell>
+                      <TableCell>
                         <code className="font-mono text-xs text-blue-600">
                           {s.path}
                         </code>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </section>
         </div>

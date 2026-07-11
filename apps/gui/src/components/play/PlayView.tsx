@@ -14,6 +14,22 @@ import {
 } from "@/app/play/actions";
 import type { SimSnapshot } from "@/lib/simulation-types";
 import type { ModelProviderInstance } from "@omnia/llm";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 function IntentTag({
   intent,
@@ -40,13 +56,13 @@ function IntentTag({
     : intent.description;
 
   const modifiersStr = intent.modifiers && intent.modifiers.length > 0 ? (
-    <span className="intent-modifiers" style={{ fontStyle: "italic", opacity: 0.8, color: "#4b5563", marginLeft: "0.25rem" }}>
+    <span className="italic opacity-80 text-muted-foreground ml-1">
       ({intent.modifiers.join(", ")})
     </span>
   ) : null;
 
   return (
-    <span className="intent-tag">
+    <span className="text-sm text-muted-foreground">
       [{label}] &ldquo;{textToDisplay}&rdquo;{modifiersStr}{outcome}
       {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
     </span>
@@ -160,197 +176,204 @@ function PromptModal({
   }, [entry]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Raw Prompts & Token Usage ({entry.entityName})</h3>
-          <button className="close-btn" onClick={onClose}>&times;</button>
-        </div>
-        
-        <div className="modal-tabs">
-          <button
-            className={activeTab === "actor" ? "tab-btn active" : "tab-btn"}
-            onClick={() => setActiveTab("actor")}
-            disabled={!entry.rawPrompt}
-          >
-            Actor Prompt {entry.usage ? "📊" : ""}
-          </button>
-          <button
-            className={activeTab === "decoder" ? "tab-btn active" : "tab-btn"}
-            onClick={() => setActiveTab("decoder")}
-            disabled={!entry.decoderPrompt}
-          >
-            Intent Decoder {entry.decoderUsage ? "📊" : ""}
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[750px] sm:max-w-[750px] max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogHeader className="px-5 pt-4 pb-3 border-b">
+          <DialogTitle>Raw Prompts & Token Usage ({entry.entityName})</DialogTitle>
+        </DialogHeader>
 
-        <div className="modal-body">
-          {activeTab === "actor" && entry.rawPrompt && (
-            <div className="tab-pane">
-              {entry.usage ? (
-                <div className="provider-info">
-                  <strong>LLM Instance:</strong> <span>{entry.usage.providerInstanceName || "Default"}</span>
-                  {entry.usage.modelName && (
-                    <span> ({entry.usage.modelName})</span>
-                  )}
-                </div>
-              ) : (
-                <div className="provider-info italic text-gray">
-                  No LLM token usage (Player turn used fixed prose).
-                </div>
-              )}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "actor" | "decoder")}>
+          <TabsList className="w-full rounded-none border-b bg-muted/50 px-5">
+            <TabsTrigger value="actor" disabled={!entry.rawPrompt} className="flex-1">
+              Actor Prompt {entry.usage ? "📊" : ""}
+            </TabsTrigger>
+            <TabsTrigger value="decoder" disabled={!entry.decoderPrompt} className="flex-1">
+              Intent Decoder {entry.decoderUsage ? "📊" : ""}
+            </TabsTrigger>
+          </TabsList>
 
-              {scaledActorBreakdown && (
-                <div className="prompt-breakdown-container">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
-                    <span>
-                      Total Input Tokens: <strong>{actorUsedTokens}</strong>
-                      {actorMaxContext > 0 ? (
-                        <span> / {actorMaxContext} ({actorUsagePctOfContext.toFixed(1)}% used)</span>
-                      ) : (
-                        <span> (infinite context)</span>
+          <div className="overflow-y-auto flex-1 p-5">
+            <TabsContent value="actor">
+              {entry.rawPrompt && (
+                <div className="flex flex-col gap-4">
+                  {entry.usage ? (
+                    <div className="rounded border-2 bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                      <strong>LLM Instance:</strong> <span>{entry.usage.providerInstanceName || "Default"}</span>
+                      {entry.usage.modelName && (
+                        <span> ({entry.usage.modelName})</span>
                       )}
-                    </span>
-                  </div>
-                  <div className="prompt-breakdown-bar">
-                    {scaledActorBreakdown.map((item, idx) => {
-                      const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
-                      return (
-                        <div
-                          key={idx}
-                          className={`bar-section ${item.type}`}
-                          style={{ width: `${item.pct}%` }}
-                          title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
-                        />
-                      );
-                    })}
-                    {isActorAbsolute && (
-                      <div
-                        className="bar-section-empty"
-                        style={{ width: `${100 - actorUsagePctOfContext}%`, backgroundColor: "#ffffff", height: "100%" }}
-                        title={`Available: ${actorMaxContext - actorUsedTokens} tokens (${(100 - actorUsagePctOfContext).toFixed(1)}% remaining)`}
-                      />
-                    )}
-                  </div>
-                  <div className="breakdown-accordion">
-                    {scaledActorBreakdown.map((item, idx) => {
-                      const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
-                      return (
-                        <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
-                          <summary className="accordion-header">
-                            <span className={`legend-color ${item.type}`} />
-                            <span className="header-text">
-                              {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
-                            </span>
-                            <span className="accordion-chevron">▼</span>
-                          </summary>
-                          <div className="accordion-content">
-                            <pre>{item.content}</pre>
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  ) : (
+                    <div className="rounded border-2 bg-muted/50 px-3 py-2 text-sm italic text-muted-foreground">
+                      No LLM token usage (Player turn used fixed prose).
+                    </div>
+                  )}
 
-              {entry.usage && (
-                <div className="prompt-output-section" style={{ marginTop: "0.5rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                    <span style={{ fontWeight: 600 }}>LLM Output</span>
-                    <span>Total Output Tokens: <strong>{entry.usage.outputTokens}</strong></span>
-                  </div>
-                  <div className="accordion-content" style={{ border: "1px solid #e5e7eb", borderRadius: "6px" }}>
-                    <pre>{entry.narrativeProse}</pre>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                  {scaledActorBreakdown && (
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mb-1">
+                        <span className="font-semibold">Input Prompt Breakdown</span>
+                        <span>
+                          Total Input Tokens: <strong>{actorUsedTokens}</strong>
+                          {actorMaxContext > 0 ? (
+                            <span> / {actorMaxContext} ({actorUsagePctOfContext.toFixed(1)}% used)</span>
+                          ) : (
+                            <span> (infinite context)</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex h-6 w-full rounded overflow-hidden bg-muted shadow-inner mb-2">
+                        {scaledActorBreakdown.map((item, idx) => {
+                          const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
+                          return (
+                            <div
+                              key={idx}
+                              className={`h-full transition-all duration-300 ${
+                                item.type === "system" ? "bg-blue-500" : item.type === "world" ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                              style={{ width: `${item.pct}%` }}
+                              title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
+                            />
+                          );
+                        })}
+                        {isActorAbsolute && (
+                          <div
+                            className="bg-white h-full"
+                            style={{ width: `${100 - actorUsagePctOfContext}%` }}
+                            title={`Available: ${actorMaxContext - actorUsedTokens} tokens (${(100 - actorUsagePctOfContext).toFixed(1)}% remaining)`}
+                          />
+                        )}
+                      </div>
+                      <Accordion type="multiple" defaultValue={["0"]}>
+                        {scaledActorBreakdown.map((item, idx) => {
+                          const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
+                          return (
+                            <AccordionItem key={idx} value={String(idx)}>
+                              <AccordionTrigger className="text-sm">
+                                <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-2 ${
+                                  item.type === "system" ? "bg-blue-500" : item.type === "world" ? "bg-emerald-500" : "bg-amber-500"
+                                }`} />
+                                {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <pre className="m-0 p-2 bg-muted rounded text-xs font-mono whitespace-pre-wrap max-h-[250px] overflow-y-auto text-foreground">
+                                  {item.content}
+                                </pre>
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    </div>
+                  )}
 
-          {activeTab === "decoder" && entry.decoderPrompt && (
-            <div className="tab-pane">
-              {entry.decoderUsage && (
-                <div className="provider-info">
-                  <strong>LLM Instance:</strong> <span>{entry.decoderUsage.providerInstanceName || "Default"}</span>
-                  {entry.decoderUsage.modelName && (
-                    <span> ({entry.decoderUsage.modelName})</span>
+                  {entry.usage && (
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
+                        <span className="font-semibold">LLM Output</span>
+                        <span>Total Output Tokens: <strong>{entry.usage.outputTokens}</strong></span>
+                      </div>
+                      <div className="rounded border-2">
+                        <pre className="m-0 p-2 bg-muted text-xs font-mono whitespace-pre-wrap max-h-[250px] overflow-y-auto text-foreground">
+                          {entry.narrativeProse}
+                        </pre>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
+            </TabsContent>
 
-              {scaledDecoderBreakdown && (
-                <div className="prompt-breakdown-container">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
-                    <span>
-                      Total Input Tokens: <strong>{decoderUsedTokens}</strong>
-                      {decoderMaxContext > 0 ? (
-                        <span> / {decoderMaxContext} ({decoderUsagePctOfContext.toFixed(1)}% used)</span>
-                      ) : (
-                        <span> (infinite context)</span>
+            <TabsContent value="decoder">
+              {entry.decoderPrompt && (
+                <div className="flex flex-col gap-4">
+                  {entry.decoderUsage && (
+                    <div className="rounded border-2 bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                      <strong>LLM Instance:</strong> <span>{entry.decoderUsage.providerInstanceName || "Default"}</span>
+                      {entry.decoderUsage.modelName && (
+                        <span> ({entry.decoderUsage.modelName})</span>
                       )}
-                    </span>
-                  </div>
-                  <div className="prompt-breakdown-bar">
-                    {scaledDecoderBreakdown.map((item, idx) => {
-                      const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
-                      return (
-                        <div
-                          key={idx}
-                          className={`bar-section ${item.type}`}
-                          style={{ width: `${item.pct}%` }}
-                          title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
-                        />
-                      );
-                    })}
-                    {isDecoderAbsolute && (
-                      <div
-                        className="bar-section-empty"
-                        style={{ width: `${100 - decoderUsagePctOfContext}%`, backgroundColor: "#ffffff", height: "100%" }}
-                        title={`Available: ${decoderMaxContext - decoderUsedTokens} tokens (${(100 - decoderUsagePctOfContext).toFixed(1)}% remaining)`}
-                      />
-                    )}
-                  </div>
-                  <div className="breakdown-accordion">
-                    {scaledDecoderBreakdown.map((item, idx) => {
-                      const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
-                      return (
-                        <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
-                          <summary className="accordion-header">
-                            <span className={`legend-color ${item.type}`} />
-                            <span className="header-text">
-                              {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
-                            </span>
-                            <span className="accordion-chevron">▼</span>
-                          </summary>
-                          <div className="accordion-content">
-                            <pre>{item.content}</pre>
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {entry.decoderUsage && (
-                <div className="prompt-output-section" style={{ marginTop: "0.5rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                    <span style={{ fontWeight: 600 }}>LLM Output</span>
-                    <span>Total Output Tokens: <strong>{entry.decoderUsage.outputTokens}</strong></span>
-                  </div>
-                  <div className="accordion-content" style={{ border: "1px solid #e5e7eb", borderRadius: "6px" }}>
-                    <pre>{JSON.stringify(entry.intents, null, 2)}</pre>
-                  </div>
+                  {scaledDecoderBreakdown && (
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mb-1">
+                        <span className="font-semibold">Input Prompt Breakdown</span>
+                        <span>
+                          Total Input Tokens: <strong>{decoderUsedTokens}</strong>
+                          {decoderMaxContext > 0 ? (
+                            <span> / {decoderMaxContext} ({decoderUsagePctOfContext.toFixed(1)}% used)</span>
+                          ) : (
+                            <span> (infinite context)</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex h-6 w-full rounded overflow-hidden bg-muted shadow-inner mb-2">
+                        {scaledDecoderBreakdown.map((item, idx) => {
+                          const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
+                          return (
+                            <div
+                              key={idx}
+                              className={`h-full transition-all duration-300 ${
+                                item.type === "system" ? "bg-blue-500" : item.type === "world" ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                              style={{ width: `${item.pct}%` }}
+                              title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
+                            />
+                          );
+                        })}
+                        {isDecoderAbsolute && (
+                          <div
+                            className="bg-white h-full"
+                            style={{ width: `${100 - decoderUsagePctOfContext}%` }}
+                            title={`Available: ${decoderMaxContext - decoderUsedTokens} tokens (${(100 - decoderUsagePctOfContext).toFixed(1)}% remaining)`}
+                          />
+                        )}
+                      </div>
+                      <Accordion type="multiple" defaultValue={["0"]}>
+                        {scaledDecoderBreakdown.map((item, idx) => {
+                          const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
+                          return (
+                            <AccordionItem key={idx} value={String(idx)}>
+                              <AccordionTrigger className="text-sm">
+                                <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-2 ${
+                                  item.type === "system" ? "bg-blue-500" : item.type === "world" ? "bg-emerald-500" : "bg-amber-500"
+                                }`} />
+                                {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <pre className="m-0 p-2 bg-muted rounded text-xs font-mono whitespace-pre-wrap max-h-[250px] overflow-y-auto text-foreground">
+                                  {item.content}
+                                </pre>
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    </div>
+                  )}
+
+                  {entry.decoderUsage && (
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
+                        <span className="font-semibold">LLM Output</span>
+                        <span>Total Output Tokens: <strong>{entry.decoderUsage.outputTokens}</strong></span>
+                      </div>
+                      <div className="rounded border-2">
+                        <pre className="m-0 p-2 bg-muted text-xs font-mono whitespace-pre-wrap max-h-[250px] overflow-y-auto text-foreground">
+                          {JSON.stringify(entry.intents, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -382,27 +405,28 @@ function LogEntryCard({
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
   return (
-    <div className="log-entry">
-      <div className="log-header">
-        <div className="log-header-left">
+    <div className="rounded border-2 bg-card p-3">
+      <div className="flex justify-between items-center mb-1.5 text-sm">
+        <div className="flex items-center gap-2">
           <strong>{entry.entityName}</strong>
-          <span className="log-meta">
+          <span className="text-muted-foreground">
             Turn {entry.turn} &middot;{" "}
             {formatSimTime(entry.timestamp)}
           </span>
         </div>
         {showMenu && (
-          <button
-            className="menu-btn"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onShowPrompt(entry)}
             title="View Raw Prompts & Token Usage"
           >
             ☰
-          </button>
+          </Button>
         )}
       </div>
-      <div className="log-prose">{entry.narrativeProse}</div>
-      <div className="log-intents">
+      <div className="text-[0.9375rem] leading-relaxed mb-1.5">{entry.narrativeProse}</div>
+      <div className="flex flex-col gap-1">
         {entry.intents.map((intent, i) => (
           <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
         ))}
@@ -684,22 +708,27 @@ export function PlayView() {
   };
 
   return (
-    <div className="play-view">
-      <h1>Omnia Play</h1>
+    <div className="mx-auto max-w-[800px] p-8 pt-4">
+      <h1 className="text-2xl mb-4">Omnia Play</h1>
 
       {!snapshot && (
-        <div className="setup-container">
-          <div className="setup-box">
-            <h2>Start New Simulation</h2>
-            <form onSubmit={handleStart} className="setup-form">
-              {error && <div className="error-banner">{error}</div>}
-              <div className="field">
-                <label htmlFor="scenario">Scenario</label>
+        <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 mt-4">
+          <div className="rounded-xl border-2 bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-head font-medium mb-5 pb-2 border-b">Start New Simulation</h2>
+            <form onSubmit={handleStart} className="flex flex-col gap-4">
+              {error && (
+                <div className="rounded border-2 border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="scenario" className="text-sm font-medium">Scenario</label>
                 <select
                   id="scenario"
                   name="scenario"
                   value={selectedScenario}
                   onChange={(e) => setSelectedScenario(e.target.value)}
+                  className="w-full rounded border-2 bg-input px-3 py-2 text-sm shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   {scenarios.map((s) => (
                     <option key={s.path} value={s.path}>
@@ -708,8 +737,8 @@ export function PlayView() {
                   ))}
                 </select>
               </div>
-              <div className="field">
-                <label htmlFor="playEntity">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="playEntity" className="text-sm font-medium">
                   Play as (Entity)
                 </label>
                 <select
@@ -718,6 +747,7 @@ export function PlayView() {
                   value={selectedEntity}
                   onChange={(e) => setSelectedEntity(e.target.value)}
                   disabled={availableEntities.length === 0}
+                  className="w-full rounded border-2 bg-input px-3 py-2 text-sm shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
                 >
                   <option value="">-- Spectator (Observer) --</option>
                   {availableEntities.map((ent) => (
@@ -728,41 +758,42 @@ export function PlayView() {
                 </select>
               </div>
 
-              <button type="submit" disabled={loading || providerInstances.length === 0}>
+              <Button type="submit" disabled={loading || providerInstances.length === 0}>
                 {loading ? "Starting..." : "Start Simulation"}
-              </button>
+              </Button>
             </form>
           </div>
 
-          <div className="setup-box">
-            <h2>Resume Simulation</h2>
+          <div className="rounded-xl border-2 bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-head font-medium mb-5 pb-2 border-b">Resume Simulation</h2>
             {savedSessions.length === 0 ? (
-              <p className="no-sessions">No saved sessions found. Start a new one!</p>
+              <p className="text-sm italic text-muted-foreground">No saved sessions found. Start a new one!</p>
             ) : (
-              <div className="saved-sessions-list">
+              <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
                 {savedSessions.map((s) => (
-                  <div key={s.id} className="saved-session-card">
-                    <div className="card-info">
-                      <strong>{s.scenarioName}</strong>
-                      <span className="card-meta">
+                  <div key={s.id} className="rounded border-2 bg-muted/50 p-3 flex justify-between items-center gap-4 transition-all hover:border-muted-foreground/30">
+                    <div className="flex flex-col gap-0.5 text-sm">
+                      <strong className="text-sm text-foreground">{s.scenarioName}</strong>
+                      <span className="text-muted-foreground">
                         Turn {s.turn} &middot; {s.entities.length} entities &middot; {s.status}
                       </span>
-                      <span className="card-date">
+                      <span className="text-xs text-muted-foreground/60">
                         Session ID: <code>{s.id}</code>
                       </span>
                     </div>
-                    <div className="card-actions">
-                      <button onClick={() => handleResume(s.id)} disabled={loading || providerInstances.length === 0}>
+                    <div className="flex gap-2 items-center">
+                      <Button size="sm" onClick={() => handleResume(s.id)} disabled={loading || providerInstances.length === 0}>
                         Resume
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
                         onClick={(e) => handleDelete(s.id, e)}
                         disabled={loading}
-                        className="delete-btn"
                         title="Delete Session"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -774,50 +805,53 @@ export function PlayView() {
 
       {snapshot && (
         <>
-          <div className="sim-info">
-            <div className="sim-info-header">
-              <h2>{snapshot.scenarioName}</h2>
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-xl">{snapshot.scenarioName}</h2>
               {snapshot.status !== "done" && snapshot.status !== "error" && (
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className="flex gap-2">
                   {snapshot.status === "running" && (
                     loading ? (
-                      <button
-                        className="pause-btn"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => {
                           pauseRequestedRef.current = true;
                         }}
                       >
                         Pause
-                      </button>
+                      </Button>
                     ) : (
-                      <button
-                        className="resume-btn"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => runSteps(snapshot.id)}
                       >
                         Resume
-                      </button>
+                      </Button>
                     )
                   )}
-                  <button
-                    className="stop-btn"
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => {
                       setSnapshot(null);
                       setError("");
                     }}
                   >
                     Stop
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
-            <p>{snapshot.scenarioDescription}</p>
-            <p className="status">
+            <p className="text-sm text-muted-foreground">{snapshot.scenarioDescription}</p>
+            <p className="text-sm font-medium text-primary mt-1">
               {loading && "⏳ "}
               {statusMessage()}
             </p>
           </div>
 
-          <div className="log-container">
+          <div className="flex flex-col gap-3 mb-4 max-h-[55vh] overflow-y-auto rounded border-2 bg-muted/30 p-3">
             {(() => {
               const playerEntity = snapshot.entities.find((e) => e.isPlayer);
               return snapshot.log.map((entry, i) => (
@@ -830,8 +864,8 @@ export function PlayView() {
               ));
             })()}
             {loading && (
-              <div className="log-processing">
-                <span className="spinner" />
+              <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2">
+                <Spinner />
                 {statusText || "Processing..."}
               </div>
             )}
@@ -839,50 +873,50 @@ export function PlayView() {
           </div>
 
           {snapshot.status === "waiting_player" && snapshot.waitingEntity && (
-            <div className="player-prompt">
-              <details>
-                <summary>
+            <div className="rounded border-2 bg-muted/50 p-4">
+              <details className="mb-3">
+                <summary className="cursor-pointer text-sm font-medium">
                   <strong>
                     Your context as {snapshot.waitingEntity.name}
                   </strong>
                 </summary>
-                <pre className="prompt-context">
+                <pre className="text-xs whitespace-pre-wrap bg-muted p-2 rounded max-h-[200px] overflow-y-auto mt-2">
                   {snapshot.waitingEntity.userContext}
                 </pre>
               </details>
 
-              <form onSubmit={handleSubmitAction} className="player-input">
-                <textarea
+              <form onSubmit={handleSubmitAction} className="flex flex-col gap-2">
+                <Textarea
                   value={playerInput}
                   onChange={(e) => setPlayerInput(e.target.value)}
                   placeholder="Describe what your character does, says, or thinks..."
                   rows={3}
                   disabled={loading}
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={loading || !playerInput.trim()}
                 >
                   {loading ? "Processing..." : "Submit Action"}
-                </button>
+                </Button>
               </form>
             </div>
           )}
 
           {(snapshot.status === "done" || snapshot.status === "error") && (
-            <button
+            <Button
               onClick={() => {
                 setSnapshot(null);
                 setError("");
               }}
-              className="new-sim-btn"
+              className="mt-4"
             >
               {snapshot.status === "error" ? "Try Again" : "New Simulation"}
-            </button>
+            </Button>
           )}
 
           {error && !loading && (
-            <div className="error-banner" style={{ marginTop: "1rem" }}>
+            <div className="rounded border-2 border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive mt-4">
               {error}
             </div>
           )}
@@ -895,592 +929,6 @@ export function PlayView() {
           )}
         </>
       )}
-
-      <style>{`
-        .play-view {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 2rem 1rem;
-        }
-
-        .play-view h1 {
-          font-size: 1.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .error-banner {
-          background: #fef2f2;
-          color: #b91c1c;
-          border: 1px solid #fca5a5;
-          border-radius: 4px;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-        }
-
-        .setup-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .field label {
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
-
-        .field input,
-        .field select {
-          padding: 0.5rem;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 0.875rem;
-          background: #fff;
-        }
-
-        button {
-          padding: 0.5rem 1rem;
-          background: #2563eb;
-          color: #fff;
-          border: none;
-          border-radius: 4px;
-          font-size: 0.875rem;
-          cursor: pointer;
-        }
-
-        button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .stop-btn {
-          background: #dc2626;
-          font-size: 0.75rem;
-          padding: 0.25rem 0.75rem;
-        }
-
-        .pause-btn {
-          background: #d97706;
-          font-size: 0.75rem;
-          padding: 0.25rem 0.75rem;
-        }
-
-        .resume-btn {
-          background: #059669;
-          font-size: 0.75rem;
-          padding: 0.25rem 0.75rem;
-        }
-
-        .sim-info {
-          margin-bottom: 1rem;
-        }
-
-        .sim-info-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.25rem;
-        }
-
-        .sim-info h2 {
-          font-size: 1.25rem;
-        }
-
-        .sim-info p {
-          color: #555;
-          font-size: 0.875rem;
-        }
-
-        .status {
-          font-weight: 500;
-          color: #2563eb;
-          margin-top: 0.25rem;
-        }
-
-        .log-container {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          margin-bottom: 1rem;
-          max-height: 55vh;
-          overflow-y: auto;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 0.75rem;
-          background: #fafafa;
-        }
-
-        .log-processing {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #888;
-          font-size: 0.8125rem;
-          font-style: italic;
-          padding: 0.5rem;
-        }
-
-        .spinner {
-          display: inline-block;
-          width: 14px;
-          height: 14px;
-          border: 2px solid #ddd;
-          border-top-color: #2563eb;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .log-entry {
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 0.75rem;
-          background: #fff;
-        }
-
-        .log-header {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 0.375rem;
-          font-size: 0.8125rem;
-        }
-
-        .log-meta {
-          color: #888;
-        }
-
-        .log-prose {
-          font-size: 0.9375rem;
-          line-height: 1.5;
-          margin-bottom: 0.375rem;
-        }
-
-        .log-intents {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .intent-tag {
-          font-size: 0.8125rem;
-          color: #555;
-        }
-
-        .player-prompt {
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 1rem;
-          background: #f9fafb;
-        }
-
-        .player-prompt details {
-          margin-bottom: 0.75rem;
-        }
-
-        .player-prompt summary {
-          cursor: pointer;
-          font-size: 0.875rem;
-        }
-
-        .prompt-context {
-          font-size: 0.75rem;
-          white-space: pre-wrap;
-          background: #f3f4f6;
-          padding: 0.5rem;
-          border-radius: 4px;
-          max-height: 200px;
-          overflow-y: auto;
-          margin-top: 0.5rem;
-        }
-
-        .player-input {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .player-input textarea {
-          padding: 0.5rem;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 0.875rem;
-          font-family: inherit;
-          resize: vertical;
-        }
-
-        .new-sim-btn {
-          margin-top: 1rem;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          backdrop-filter: blur(2px);
-        }
-        .modal-content {
-          background: #fff;
-          width: 90%;
-          max-width: 750px;
-          max-height: 85vh;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          animation: modalFadeIn 0.2s ease-out;
-        }
-        @keyframes modalFadeIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .modal-header {
-          padding: 1rem 1.25rem;
-          border-bottom: 1px solid #e5e7eb;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .modal-header h3 {
-          margin: 0;
-          font-size: 1.1rem;
-          color: #111;
-        }
-        .close-btn {
-          background: transparent;
-          border: none;
-          color: #9ca3af;
-          font-size: 1.5rem;
-          cursor: pointer;
-          padding: 0;
-          line-height: 1;
-        }
-        .close-btn:hover {
-          color: #4b5563;
-        }
-        .modal-tabs {
-          display: flex;
-          background: #f9fafb;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .tab-btn {
-          flex: 1;
-          background: transparent;
-          color: #4b5563;
-          border: none;
-          border-bottom: 2px solid transparent;
-          border-radius: 0;
-          padding: 0.75rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
-        .tab-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-        .tab-btn:hover:not(:disabled) {
-          background: #f3f4f6;
-          color: #111;
-        }
-        .tab-btn.active {
-          border-bottom-color: #2563eb;
-          color: #2563eb;
-          background: #fff;
-        }
-        .modal-body {
-          padding: 1.25rem;
-          overflow-y: auto;
-          flex-grow: 1;
-        }
-        .tab-pane {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .provider-info {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          color: #374151;
-          padding: 0.5rem 0.75rem;
-          border-radius: 6px;
-          font-size: 0.8125rem;
-        }
-        .prompt-breakdown-bar {
-          display: flex;
-          height: 24px;
-          width: 100%;
-          border-radius: 4px;
-          overflow: hidden;
-          background: #e5e7eb;
-          margin-top: 0.5rem;
-          margin-bottom: 0.5rem;
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        .bar-section {
-          height: 100%;
-          transition: width 0.3s ease;
-        }
-        .bar-section.system {
-          background: #3b82f6;
-        }
-        .bar-section.world {
-          background: #10b981;
-        }
-        .bar-section.memories {
-          background: #f59e0b;
-        }
-        .breakdown-accordion {
-          margin-top: 0.75rem;
-          margin-bottom: 0.75rem;
-        }
-        details.breakdown-accordion-item {
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          margin-bottom: 0.5rem;
-          background: #fff;
-          overflow: hidden;
-        }
-        summary.accordion-header {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
-          background: #f9fafb;
-          cursor: pointer;
-          user-select: none;
-          font-size: 0.8125rem;
-          font-weight: 500;
-        }
-        summary.accordion-header::-webkit-details-marker {
-          display: none;
-        }
-        summary.accordion-header {
-          list-style: none;
-        }
-        .header-text {
-          flex-grow: 1;
-        }
-        .accordion-chevron {
-          font-size: 0.75rem;
-          color: #9ca3af;
-          transition: transform 0.2s ease;
-        }
-        details[open] .accordion-chevron {
-          transform: rotate(180deg);
-        }
-        .accordion-content {
-          padding: 0.75rem;
-          border-top: 1px solid #e5e7eb;
-          background: #fafafa;
-        }
-        .accordion-content pre {
-          margin: 0;
-          padding: 0.5rem;
-          background: #f3f4f6;
-          border: 1px solid #e5e7eb;
-          border-radius: 4px;
-          font-family: monospace;
-          font-size: 0.75rem;
-          white-space: pre-wrap;
-          word-break: break-all;
-          max-height: 250px;
-          overflow-y: auto;
-          color: #1f2937;
-        }
-        .legend-color {
-          width: 10px;
-          height: 10px;
-          border-radius: 2px;
-          display: inline-block;
-        }
-        .legend-color.system {
-          background: #3b82f6;
-        }
-        .legend-color.world {
-          background: #10b981;
-        }
-        .legend-color.memories {
-          background: #f59e0b;
-        }
-
-        .usage-stats code {
-          background: rgba(37, 99, 235, 0.1);
-          color: #1d4ed8;
-          padding: 0.125rem 0.25rem;
-          border-radius: 4px;
-        }
-        .prompt-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.375rem;
-        }
-        .prompt-field h4 {
-          margin: 0;
-          font-size: 0.875rem;
-          color: #374151;
-          font-weight: 600;
-        }
-        .prompt-field pre {
-          margin: 0;
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          padding: 0.75rem;
-          border-radius: 6px;
-          font-size: 0.75rem;
-          line-height: 1.5;
-          white-space: pre-wrap;
-          font-family: monospace;
-          max-height: 250px;
-          overflow-y: auto;
-          color: #1f2937;
-        }
-        .italic {
-          font-style: italic;
-        }
-        .text-gray {
-          color: #6b7280;
-        }
-        
-        /* Menu Button Styles */
-        .log-header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .menu-btn {
-          background: transparent;
-          border: none;
-          color: #9ca3af;
-          cursor: pointer;
-          padding: 0.25rem 0.5rem;
-          font-size: 1rem;
-          line-height: 1;
-          border-radius: 4px;
-          transition: all 0.15s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .menu-btn:hover {
-          background: #f3f4f6;
-          color: #4b5563;
-        }
-        .log-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.375rem;
-          font-size: 0.8125rem;
-        }
-
-        /* Two-Column Setup Styles */
-        .setup-container {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 2rem;
-          margin-top: 1rem;
-        }
-        @media (min-width: 768px) {
-          .setup-container {
-            grid-template-columns: 1.2fr 1fr;
-          }
-        }
-        .setup-box {
-          background: #fff;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 1.5rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .setup-box h2 {
-          font-size: 1.15rem;
-          margin-bottom: 1.25rem;
-          color: #111;
-          border-bottom: 1px solid #f3f4f6;
-          padding-bottom: 0.5rem;
-        }
-        .no-sessions {
-          color: #6b7280;
-          font-size: 0.875rem;
-          font-style: italic;
-        }
-        .saved-sessions-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          max-height: 400px;
-          overflow-y: auto;
-          padding-right: 0.25rem;
-        }
-        .saved-session-card {
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 0.75rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 1rem;
-          background: #f9fafb;
-          transition: all 0.15s;
-        }
-        .saved-session-card:hover {
-          border-color: #cbd5e1;
-          background: #f1f5f9;
-        }
-        .card-info {
-          display: flex;
-          flex-direction: column;
-          gap: 0.125rem;
-          font-size: 0.8125rem;
-        }
-        .card-info strong {
-          font-size: 0.875rem;
-          color: #1f2937;
-        }
-        .card-meta {
-          color: #4b5563;
-        }
-        .card-date {
-          color: #9ca3af;
-          font-size: 0.75rem;
-        }
-        .card-actions {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-        }
-        .saved-session-card button {
-          padding: 0.375rem 0.75rem;
-          font-size: 0.8125rem;
-          background: #2563eb;
-        }
-        .saved-session-card button:hover {
-          background: #1d4ed8;
-        }
-        .saved-session-card button.delete-btn {
-          background: #ef4444;
-        }
-        .saved-session-card button.delete-btn:hover {
-          background: #dc2626;
-        }
-      `}</style>
     </div>
   );
 }

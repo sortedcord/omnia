@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/", label: "Home" },
@@ -13,57 +14,22 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="navbar">
-      <Link href="/" className="nav-brand">
-        Omnia
-      </Link>
-      <div className="nav-links">
+    <nav className="flex items-center gap-4 border-b-2 px-4 py-3">
+      <Button variant="link" asChild className="font-head text-base font-bold no-underline">
+        <Link href="/">Omnia</Link>
+      </Button>
+      <div className="flex gap-1">
         {links.map((link) => (
-          <Link
+          <Button
             key={link.href}
-            href={link.href}
-            className={pathname === link.href ? "nav-link active" : "nav-link"}
+            variant={pathname === link.href ? "default" : "ghost"}
+            size="sm"
+            asChild
           >
-            {link.label}
-          </Link>
+            <Link href={link.href}>{link.label}</Link>
+          </Button>
         ))}
       </div>
-      <style>{`
-        .navbar {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid #e5e7eb;
-          background: #fff;
-        }
-        .nav-brand {
-          font-weight: 700;
-          font-size: 1rem;
-          color: #111;
-          text-decoration: none;
-        }
-        .nav-links {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .nav-link {
-          padding: 0.25rem 0.75rem;
-          border-radius: 4px;
-          font-size: 0.875rem;
-          color: #555;
-          text-decoration: none;
-        }
-        .nav-link:hover {
-          background: #f3f4f6;
-          color: #111;
-        }
-        .nav-link.active {
-          background: #eff6ff;
-          color: #2563eb;
-          font-weight: 500;
-        }
-      `}</style>
     </nav>
   );
 }
