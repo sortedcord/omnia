@@ -4,6 +4,7 @@ import {
   WorldState,
   naturalizeTime,
   serializeSubjectiveWorldState,
+  resolveAlias,
 } from "@omnia/core";
 import {
   BufferEntry,
@@ -239,7 +240,7 @@ Guidelines:
       let content = entry.content;
       // Resolve system IDs to subjective aliases in the content
       for (const targetId of entry.involvedEntityIds) {
-        const alias = entity.aliases.get(targetId) ?? targetId;
+        const alias = resolveAlias(entity, targetId);
         content = content.replace(new RegExp(targetId, "g"), alias);
       }
       if (entry.locationId) {

@@ -33,8 +33,10 @@ export const ScenarioMemoryEntrySchema = z.object({
     type: z.enum(["dialogue", "action", "monologue"]),
     originalText: z.string(),
     description: z.string(),
+    selfDescription: z.string().optional(),
     actorId: z.string(),
     targetIds: z.array(z.string()),
+    modifiers: z.array(z.string()).optional(),
   }),
   outcome: z.object({
     isValid: z.boolean(),

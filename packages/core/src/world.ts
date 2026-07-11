@@ -1,6 +1,7 @@
 import { AttributableObject, Attribute, serializeAttributes } from "./attribute.js";
 import { Entity } from "./entity.js";
 import { WorldClock } from "./clock.js";
+import { resolveAlias } from "./alias.js";
 
 export class WorldState extends AttributableObject {
   /**
@@ -118,19 +119,6 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
   return lines.join("\n");
 }
 
-/**
- * Resolves how a viewer subjectively refers to a target entity.
- * - Self → "you"
- * - Known (in the viewer's alias map) → the subjective alias
- * - Unknown → "an unfamiliar figure"
- *
- * Mirrors the implementation in @omnia/memory's resolveAlias, inlined here
- * to avoid a circular dependency (memory depends on core).
- */
-function resolveAliasViewer(viewer: Entity, targetId: string): string {
-  if (targetId === viewer.id) return "you";
-  return viewer.aliases.get(targetId) ?? "an unfamiliar figure";
-}
 
 /**
  * Serializes a single attribute the way a viewer perceives it — name and
@@ -164,7 +152,7 @@ export function serializeSubjectiveWorldState(
   }
 
   const lines: string[] = [];
-  const viewerAlias = resolveAliasViewer(viewer, viewerId);
+  const viewerAlias = resolveAlias(viewer, viewerId);
 
   // --- World attributes (only those the viewer can see) ---
   const worldVisible = worldState.getVisibleAttributesFor(viewerId);
@@ -208,7 +196,7 @@ export function serializeSubjectiveWorldState(
   if (coLocated.length > 0) {
     lines.push("  Entities present with you:");
     for (const e of coLocated) {
-      const alias = resolveAliasViewer(viewer, e.id);
+      const alias = resolveAlias(viewer, e.id);
       lines.push(`    - ${alias}:`);
       const eVisible = e.getVisibleAttributesFor(viewerId);
       lines.push(serializeVisibleAttributes(eVisible).split("\n").map((l) => "      " + l).join("\n"));
@@ -220,7 +208,7 @@ export function serializeSubjectiveWorldState(
   if (elsewhere.length > 0) {
     lines.push("  Other presences you are aware of (elsewhere):");
     for (const e of elsewhere) {
-      const alias = resolveAliasViewer(viewer, e.id);
+      const alias = resolveAlias(viewer, e.id);
       lines.push(`    - ${alias} [elsewhere]`);
     }
   }

@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { Entity } from "@omnia/core";
+import { Entity, resolveAlias } from "@omnia/core";
 import { Intent } from "@omnia/intent";
 
 export interface BufferEntry {
@@ -16,10 +16,7 @@ export interface BufferEntry {
   };
 }
 
-export function resolveAlias(viewer: Entity, targetId: string): string {
-  if (targetId === viewer.id) return "you";
-  return viewer.aliases.get(targetId) ?? "an unfamiliar figure";
-}
+export { resolveAlias } from "@omnia/core";
 
 export function serializeSubjectiveBufferEntry(
   entry: BufferEntry,

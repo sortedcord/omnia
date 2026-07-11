@@ -106,7 +106,6 @@ export class ScenarioLoader {
         world.addEntity(entity);
         this.coreRepo.saveEntity(entity, world.id);
 
-        // Seed initial memory buffer history
         if (entData.initialMemories) {
           for (const mem of entData.initialMemories) {
             this.bufferRepo.save({
@@ -114,7 +113,11 @@ export class ScenarioLoader {
               ownerId: entData.id,
               timestamp: mem.timestamp,
               locationId: mem.locationId,
-              intent: mem.intent,
+              intent: {
+                ...mem.intent,
+                selfDescription: mem.intent.selfDescription ?? "",
+                modifiers: mem.intent.modifiers ?? [],
+              },
               outcome: mem.outcome,
             });
           }
