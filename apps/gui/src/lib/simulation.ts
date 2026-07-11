@@ -119,7 +119,7 @@ class SimulationManager {
     playEntityName?: string,
     providerInstanceId?: string,
   ): Promise<SimSnapshot> {
-    let activeInstance = providerInstanceId
+    const activeInstance = providerInstanceId
       ? ProviderManager.list().find((p) => p.id === providerInstanceId)
       : ProviderManager.getActive();
 
@@ -385,6 +385,7 @@ class SimulationManager {
         entry.intents.push({
           type: intent.type,
           description: intent.description,
+          selfDescription: intent.selfDescription,
           targetIds: intent.targetIds,
           isValid: outcome.isValid,
           reason: outcome.reason,
@@ -528,6 +529,7 @@ class SimulationManager {
       entry.intents.push({
         type: intent.type,
         description: intent.description,
+        selfDescription: intent.selfDescription,
         targetIds: intent.targetIds,
         isValid: outcome.isValid,
         reason: outcome.reason,

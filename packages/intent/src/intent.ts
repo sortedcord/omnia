@@ -24,6 +24,9 @@ export const IntentSchema = z.object({
   /** A concise, structured description of the intent's action or dialogue. */
   description: z.string(),
 
+  /** The same event from the actor's own perspective (second person, "You"). */
+  selfDescription: z.string(),
+
   /** The entity ID of the actor performing the intent. */
   actorId: z.string(),
 

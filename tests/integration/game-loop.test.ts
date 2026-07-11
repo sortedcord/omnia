@@ -33,6 +33,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
           type: "dialogue",
           originalText: '"Cover me," Alice whispered to Bob.',
           description: "Alice whispers to Bob to cover her.",
+          selfDescription: "You whisper to Bob to cover you.",
           actorId: "alice",
           targetIds: ["bob"],
         },
@@ -40,6 +41,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
           type: "action",
           originalText: "She crept towards the door and pulled the handle.",
           description: "Alice creeps to the door and pulls the handle.",
+          selfDescription: "You creep to the door and pull the handle.",
           actorId: "alice",
           targetIds: [],
         },
@@ -108,6 +110,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
       type: "action" as const,
       originalText: "She tries to unlock the gate with a hairpin.",
       description: "Alice attempts to pick the lock with a hairpin.",
+      selfDescription: "You attempt to pick the lock with a hairpin.",
       actorId: "alice",
       targetIds: [],
     };
@@ -116,6 +119,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
       type: "dialogue" as const,
       originalText: '"This is useless," she mutters.',
       description: "Alice mutters to herself.",
+      selfDescription: "You mutter to yourself.",
       actorId: "alice",
       targetIds: [],
     };

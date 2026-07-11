@@ -1,4 +1,4 @@
-import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
+import { WorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 import { IntentSequence, IntentSequenceSchema } from "./intent.js";
 
@@ -37,7 +37,9 @@ For each intent you must:
    - "action": Any physical or logical action performed in the world (e.g., moving, picking up, opening, looking).
    - "monologue": An inner thought, reflection, or internal monologue. This is purely internal — not spoken aloud, not perceivable by any other entity, and not a physical action. Use this for any prose depicting the character thinking, reflecting, feeling, or narrating to themselves internally.
 2. Extract the original text fragment from the prose that corresponds to this intent.
-3. Write a concise, structured description of the intent (what is being done or said). Include as much detail about the action as possible that was extracted from the narrative prose. Do not make up qualities.
+3. Populate "description" and "selfDescription":
+   - "description": No subject or name — a bare third-person verb phrase only (e.g. "clears their throat", "shakes their head slowly"), so it can be composed with any observer's alias for the actor.
+   - "selfDescription": The same event from the actor's own perspective, second person, complete sentence starting with "You" (e.g. "You clear your throat.", "You shake your head slowly."). This is shown directly in the actor's own memory — it must never say "the actor" or refer to them in the third person.
 4. Identify the actorId (the entity performing the intent — this will always be "${actorId}").
 5. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" and "ACTOR ALIASES" mapping to resolve any subjective names, descriptions, or nicknames used in the prose to their correct system entity IDs. If no specific target, use an empty array. For "monologue" intents, targetIds must always be an empty array.
 
@@ -58,7 +60,7 @@ The actor refers to other entities using these subjective names/aliases:
 ${aliasContext}
 
 === WORLD STATE ===
-${serializeObjectiveWorldState(worldState)}
+${serializeSimplifiedWorldState(worldState)}
 
 === ACTOR ===
 Actor ID: ${actorId}
@@ -81,4 +83,31 @@ ${narrativeProse}
 
     return response.data;
   }
+}
+
+function serializeSimplifiedWorldState(worldState: WorldState): string {
+  const lines: string[] = [];
+
+  lines.push("Locations:");
+  if (worldState.locations.size > 0) {
+    for (const loc of worldState.locations.values()) {
+      const parentId = (loc as { parentId?: string | null }).parentId;
+      const parentStr = parentId ? ` (Parent: ${parentId})` : "";
+      lines.push(`  - Location [ID: ${loc.id}]${parentStr}`);
+    }
+  } else {
+    lines.push("  (No locations)");
+  }
+
+  lines.push("Entities:");
+  if (worldState.entities.size > 0) {
+    for (const entity of worldState.entities.values()) {
+      const locStr = entity.locationId ? ` (Location: ${entity.locationId})` : "";
+      lines.push(`  - Entity [ID: ${entity.id}]${locStr}`);
+    }
+  } else {
+    lines.push("  (No entities)");
+  }
+
+  return lines.join("\n");
 }

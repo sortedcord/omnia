@@ -17,8 +17,10 @@ import type { LLMProviderInstance } from "@omnia/llm";
 
 function IntentTag({
   intent,
+  isSelf,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
+  isSelf?: boolean;
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
@@ -33,9 +35,13 @@ function IntentTag({
     outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
   }
 
+  const textToDisplay = (isSelf && intent.selfDescription)
+    ? intent.selfDescription
+    : intent.description;
+
   return (
     <span className="intent-tag">
-      [{label}] &ldquo;{intent.description}&rdquo;{outcome}
+      [{label}] &ldquo;{textToDisplay}&rdquo;{outcome}
       {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
     </span>
   );
@@ -301,9 +307,11 @@ function formatSimTime(isoString: string) {
 function LogEntryCard({
   entry,
   onShowPrompt,
+  isPlayerCard,
 }: {
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
+  isPlayerCard: boolean;
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
@@ -330,7 +338,7 @@ function LogEntryCard({
       <div className="log-prose">{entry.narrativeProse}</div>
       <div className="log-intents">
         {entry.intents.map((intent, i) => (
-          <IntentTag key={i} intent={intent} />
+          <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
         ))}
       </div>
     </div>
@@ -744,13 +752,17 @@ export function PlayView() {
           </div>
 
           <div className="log-container">
-            {snapshot.log.map((entry, i) => (
-              <LogEntryCard
-                key={i}
-                entry={entry}
-                onShowPrompt={setSelectedEntryForModal}
-              />
-            ))}
+            {(() => {
+              const playerEntity = snapshot.entities.find((e) => e.isPlayer);
+              return snapshot.log.map((entry, i) => (
+                <LogEntryCard
+                  key={i}
+                  entry={entry}
+                  onShowPrompt={setSelectedEntryForModal}
+                  isPlayerCard={entry.entityId === playerEntity?.id}
+                />
+              ));
+            })()}
             {loading && (
               <div className="log-processing">
                 <span className="spinner" />

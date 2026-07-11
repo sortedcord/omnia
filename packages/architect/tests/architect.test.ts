@@ -22,6 +22,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       type: "action",
       originalText: "open the chest and read the scroll",
       description: "Open the chest and read the scroll",
+      selfDescription: "You open the chest and read the scroll.",
       actorId: "alice",
       targetIds: [],
     };
@@ -51,6 +52,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       type: "action",
       originalText: "unlock the gate and escape",
       description: "Unlock the gate and escape",
+      selfDescription: "You unlock the gate and escape.",
       actorId: "bob",
       targetIds: [],
     };
@@ -72,6 +74,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       type: "action",
       originalText: "haunt the mansion",
       description: "Haunt the mansion",
+      selfDescription: "You haunt the mansion.",
       actorId: "ghost",
       targetIds: [],
     };
@@ -110,6 +113,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
       type: "action",
       originalText: "pick the lock of the wooden chest",
       description: "Pick the lock of the wooden chest",
+      selfDescription: "You pick the lock of the wooden chest.",
       actorId: "alice",
       targetIds: [],
     };
@@ -152,6 +156,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
       type: "action",
       originalText: "run away",
       description: "Run away",
+      selfDescription: "You run away.",
       actorId: "bob",
       targetIds: [],
     };
