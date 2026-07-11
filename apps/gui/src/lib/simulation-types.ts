@@ -26,6 +26,7 @@ export interface LogEntry {
     totalTokens: number;
     modelName?: string;
     providerInstanceName?: string;
+    maxContext?: number;
   };
   decoderPrompt?: {
     systemPrompt: string;
@@ -37,6 +38,7 @@ export interface LogEntry {
     totalTokens: number;
     modelName?: string;
     providerInstanceName?: string;
+    maxContext?: number;
   };
 }
 

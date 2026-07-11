@@ -93,6 +93,7 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
       totalTokens: 15,
       modelName: "google/gemini-2.5-flash",
       providerInstanceName: "Default",
+      maxContext: 32768,
     });
 
     expect(provider.lastCalls.length).toBe(1);
@@ -105,6 +106,7 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
         totalTokens: 15,
         modelName: "google/gemini-2.5-flash",
         providerInstanceName: "Default",
+        maxContext: 32768,
       },
     });
   });

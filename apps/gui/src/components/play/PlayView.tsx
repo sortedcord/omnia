@@ -13,7 +13,7 @@ import {
   listProviderInstances,
 } from "@/app/play/actions";
 import type { SimSnapshot } from "@/lib/simulation-types";
-import type { LLMProviderInstance } from "@omnia/llm";
+import type { ModelProviderInstance } from "@omnia/llm";
 
 function IntentTag({
   intent,
@@ -90,9 +90,9 @@ function PromptModal({
     const memTokens = Math.max(0, inputTokens - sysTokens - worldTokens);
 
     return [
-      { label: "System Prompt", pct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
-      { label: "World Info", pct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
-      { label: "Recent Memories", pct: memPct, tokens: memTokens, type: "memories", content: memStr || "(No memories yet.)" },
+      { label: "System Prompt", pct: sysPct, relativePct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
+      { label: "World Info", pct: worldPct, relativePct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
+      { label: "Recent Memories", pct: memPct, relativePct: memPct, tokens: memTokens, type: "memories", content: memStr || "(No memories yet.)" },
     ];
   };
 
@@ -124,14 +124,34 @@ function PromptModal({
     const proseTokens = Math.max(0, inputTokens - sysTokens - worldTokens);
 
     return [
-      { label: "System Prompt", pct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
-      { label: "Decoder Context", pct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
-      { label: "Narrative Prose", pct: prosePct, tokens: proseTokens, type: "memories", content: proseStr },
+      { label: "System Prompt", pct: sysPct, relativePct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
+      { label: "Decoder Context", pct: worldPct, relativePct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
+      { label: "Narrative Prose", pct: prosePct, relativePct: prosePct, tokens: proseTokens, type: "memories", content: proseStr },
     ];
   };
 
   const actorBreakdown = (entry.rawPrompt && entry.usage) ? parseActorPrompt(entry.rawPrompt.systemPrompt, entry.rawPrompt.userContext, entry.usage.inputTokens) : null;
   const decoderBreakdown = (entry.decoderPrompt && entry.decoderUsage) ? parseDecoderPrompt(entry.decoderPrompt.systemPrompt, entry.decoderPrompt.userContext, entry.decoderUsage.inputTokens) : null;
+
+  const actorMaxContext = entry.usage?.maxContext !== undefined ? entry.usage.maxContext : 32768;
+  const actorUsedTokens = entry.usage?.inputTokens || 0;
+  const actorUsagePctOfContext = actorMaxContext > 0 ? (actorUsedTokens / actorMaxContext) * 100 : 0;
+  const isActorAbsolute = actorMaxContext > 0 && actorUsagePctOfContext >= 20;
+
+  const scaledActorBreakdown = actorBreakdown ? actorBreakdown.map((item) => ({
+    ...item,
+    pct: isActorAbsolute ? item.relativePct * (actorUsedTokens / actorMaxContext) : item.relativePct
+  })) : null;
+
+  const decoderMaxContext = entry.decoderUsage?.maxContext !== undefined ? entry.decoderUsage.maxContext : 32768;
+  const decoderUsedTokens = entry.decoderUsage?.inputTokens || 0;
+  const decoderUsagePctOfContext = decoderMaxContext > 0 ? (decoderUsedTokens / decoderMaxContext) * 100 : 0;
+  const isDecoderAbsolute = decoderMaxContext > 0 && decoderUsagePctOfContext >= 20;
+
+  const scaledDecoderBreakdown = decoderBreakdown ? decoderBreakdown.map((item) => ({
+    ...item,
+    pct: isDecoderAbsolute ? item.relativePct * (decoderUsedTokens / decoderMaxContext) : item.relativePct
+  })) : null;
 
   useEffect(() => {
     if (!entry.rawPrompt && entry.decoderPrompt) {
@@ -180,37 +200,57 @@ function PromptModal({
                 </div>
               )}
 
-              {actorBreakdown && (
+              {scaledActorBreakdown && (
                 <div className="prompt-breakdown-container">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
                     <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
-                    <span>Total Input Tokens: <strong>{entry.usage?.inputTokens}</strong></span>
+                    <span>
+                      Total Input Tokens: <strong>{actorUsedTokens}</strong>
+                      {actorMaxContext > 0 ? (
+                        <span> / {actorMaxContext} ({actorUsagePctOfContext.toFixed(1)}% used)</span>
+                      ) : (
+                        <span> (infinite context)</span>
+                      )}
+                    </span>
                   </div>
                   <div className="prompt-breakdown-bar">
-                    {actorBreakdown.map((item, idx) => (
+                    {scaledActorBreakdown.map((item, idx) => {
+                      const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
+                      return (
+                        <div
+                          key={idx}
+                          className={`bar-section ${item.type}`}
+                          style={{ width: `${item.pct}%` }}
+                          title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
+                        />
+                      );
+                    })}
+                    {isActorAbsolute && (
                       <div
-                        key={idx}
-                        className={`bar-section ${item.type}`}
-                        style={{ width: `${item.pct}%` }}
-                        title={`${item.label}: ${item.tokens} tokens (${item.pct.toFixed(1)}%)`}
+                        className="bar-section-empty"
+                        style={{ width: `${100 - actorUsagePctOfContext}%`, backgroundColor: "#ffffff", height: "100%" }}
+                        title={`Available: ${actorMaxContext - actorUsedTokens} tokens (${(100 - actorUsagePctOfContext).toFixed(1)}% remaining)`}
                       />
-                    ))}
+                    )}
                   </div>
                   <div className="breakdown-accordion">
-                    {actorBreakdown.map((item, idx) => (
-                      <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
-                        <summary className="accordion-header">
-                          <span className={`legend-color ${item.type}`} />
-                          <span className="header-text">
-                            {item.label}: <strong>{item.tokens}</strong> tokens ({item.pct.toFixed(0)}%)
-                          </span>
-                          <span className="accordion-chevron">▼</span>
-                        </summary>
-                        <div className="accordion-content">
-                          <pre>{item.content}</pre>
-                        </div>
-                      </details>
-                    ))}
+                    {scaledActorBreakdown.map((item, idx) => {
+                      const displayPct = actorMaxContext > 0 ? (item.tokens / actorMaxContext) * 100 : item.relativePct;
+                      return (
+                        <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
+                          <summary className="accordion-header">
+                            <span className={`legend-color ${item.type}`} />
+                            <span className="header-text">
+                              {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
+                            </span>
+                            <span className="accordion-chevron">▼</span>
+                          </summary>
+                          <div className="accordion-content">
+                            <pre>{item.content}</pre>
+                          </div>
+                        </details>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -240,37 +280,57 @@ function PromptModal({
                 </div>
               )}
 
-              {decoderBreakdown && (
+              {scaledDecoderBreakdown && (
                 <div className="prompt-breakdown-container">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
                     <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
-                    <span>Total Input Tokens: <strong>{entry.decoderUsage?.inputTokens}</strong></span>
+                    <span>
+                      Total Input Tokens: <strong>{decoderUsedTokens}</strong>
+                      {decoderMaxContext > 0 ? (
+                        <span> / {decoderMaxContext} ({decoderUsagePctOfContext.toFixed(1)}% used)</span>
+                      ) : (
+                        <span> (infinite context)</span>
+                      )}
+                    </span>
                   </div>
                   <div className="prompt-breakdown-bar">
-                    {decoderBreakdown.map((item, idx) => (
+                    {scaledDecoderBreakdown.map((item, idx) => {
+                      const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
+                      return (
+                        <div
+                          key={idx}
+                          className={`bar-section ${item.type}`}
+                          style={{ width: `${item.pct}%` }}
+                          title={`${item.label}: ${item.tokens} tokens (${displayPct.toFixed(1)}%)`}
+                        />
+                      );
+                    })}
+                    {isDecoderAbsolute && (
                       <div
-                        key={idx}
-                        className={`bar-section ${item.type}`}
-                        style={{ width: `${item.pct}%` }}
-                        title={`${item.label}: ${item.tokens} tokens (${item.pct.toFixed(1)}%)`}
+                        className="bar-section-empty"
+                        style={{ width: `${100 - decoderUsagePctOfContext}%`, backgroundColor: "#ffffff", height: "100%" }}
+                        title={`Available: ${decoderMaxContext - decoderUsedTokens} tokens (${(100 - decoderUsagePctOfContext).toFixed(1)}% remaining)`}
                       />
-                    ))}
+                    )}
                   </div>
                   <div className="breakdown-accordion">
-                    {decoderBreakdown.map((item, idx) => (
-                      <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
-                        <summary className="accordion-header">
-                          <span className={`legend-color ${item.type}`} />
-                          <span className="header-text">
-                            {item.label}: <strong>{item.tokens}</strong> tokens ({item.pct.toFixed(0)}%)
-                          </span>
-                          <span className="accordion-chevron">▼</span>
-                        </summary>
-                        <div className="accordion-content">
-                          <pre>{item.content}</pre>
-                        </div>
-                      </details>
-                    ))}
+                    {scaledDecoderBreakdown.map((item, idx) => {
+                      const displayPct = decoderMaxContext > 0 ? (item.tokens / decoderMaxContext) * 100 : item.relativePct;
+                      return (
+                        <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
+                          <summary className="accordion-header">
+                            <span className={`legend-color ${item.type}`} />
+                            <span className="header-text">
+                              {item.label}: <strong>{item.tokens}</strong> tokens ({displayPct.toFixed(0)}%)
+                            </span>
+                            <span className="accordion-chevron">▼</span>
+                          </summary>
+                          <div className="accordion-content">
+                            <pre>{item.content}</pre>
+                          </div>
+                        </details>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -488,7 +548,7 @@ export function PlayView() {
   const [availableEntities, setAvailableEntities] = useState<{ id: string; name: string }[]>([]);
   const [selectedEntity, setSelectedEntity] = useState("");
 
-  const [providerInstances, setProviderInstances] = useState<LLMProviderInstance[]>([]);
+  const [providerInstances, setProviderInstances] = useState<ModelProviderInstance[]>([]);
 
   // Load scenarios and provider instances on mount
   useEffect(() => {

@@ -68,6 +68,12 @@ function getSettingsDb() {
     // ignore
   }
 
+  try {
+    db.prepare(`ALTER TABLE provider_instances ADD COLUMN maxContext INTEGER`).run();
+  } catch {
+    // ignore
+  }
+
   // Auto-bootstrap environment variables if DB contains 0 instances
   try {
     if (!hasBootstrapped) {
@@ -80,25 +86,25 @@ function getSettingsDb() {
         if (googleKey && googleKey.trim()) {
           const id = "provider-default-google";
           db.prepare(`
-            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative");
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative", 32768);
           hasInsertedGenerative = true;
 
           const embedId = "provider-default-google-embed";
           db.prepare(`
-            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding");
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding", 0);
         }
 
         if (openRouterKey && openRouterKey.trim()) {
           const id = "provider-default-openrouter";
           const isActive = hasInsertedGenerative ? 0 : 1;
           db.prepare(`
-            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative");
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative", 32768);
         }
       }
       hasBootstrapped = true;
@@ -122,6 +128,7 @@ export class ProviderManager {
         isActive: number;
         modelName?: string;
         type: string;
+        maxContext?: number;
       }[];
       return rows.map((r) => ({
         id: r.id,
@@ -131,6 +138,7 @@ export class ProviderManager {
         isActive: r.isActive === 1,
         modelName: r.modelName || undefined,
         type: (r.type as "generative" | "embedding") || "generative",
+        maxContext: r.maxContext !== undefined && r.maxContext !== null ? r.maxContext : (r.type === "embedding" ? 0 : 32768),
       }));
     } finally {
       db.close();
@@ -142,7 +150,8 @@ export class ProviderManager {
     providerName: string,
     apiKey: string,
     modelName?: string,
-    type: "generative" | "embedding" = "generative"
+    type: "generative" | "embedding" = "generative",
+    maxContext?: number
   ): ModelProviderInstance {
     const db = getSettingsDb();
     try {
@@ -152,12 +161,14 @@ export class ProviderManager {
         .get(type) as { count: number };
       const isActive = activeCount.count === 0 ? 1 : 0;
       
+      const actualMaxContext = maxContext !== undefined ? maxContext : (type === "generative" ? 32768 : 0);
+
       db.prepare(`
-        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(id, name, providerName, apiKey, isActive, modelName || null, type);
+        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, name, providerName, apiKey, isActive, modelName || null, type, actualMaxContext);
       
-      return { id, name, providerName, apiKey, isActive: isActive === 1, modelName, type };
+      return { id, name, providerName, apiKey, isActive: isActive === 1, modelName, type, maxContext: actualMaxContext };
     } finally {
       db.close();
     }
@@ -201,22 +212,24 @@ export class ProviderManager {
     providerName: string,
     apiKey?: string,
     modelName?: string,
-    type: "generative" | "embedding" = "generative"
+    type: "generative" | "embedding" = "generative",
+    maxContext?: number
   ): void {
     const db = getSettingsDb();
     try {
+      const actualMaxContext = maxContext !== undefined ? maxContext : (type === "generative" ? 32768 : 0);
       if (apiKey && apiKey.trim()) {
         db.prepare(`
           UPDATE provider_instances
-          SET name = ?, providerName = ?, apiKey = ?, modelName = ?, type = ?
+          SET name = ?, providerName = ?, apiKey = ?, modelName = ?, type = ?, maxContext = ?
           WHERE id = ?
-        `).run(name, providerName, apiKey, modelName || null, type, id);
+        `).run(name, providerName, apiKey, modelName || null, type, actualMaxContext, id);
       } else {
         db.prepare(`
           UPDATE provider_instances
-          SET name = ?, providerName = ?, modelName = ?, type = ?
+          SET name = ?, providerName = ?, modelName = ?, type = ?, maxContext = ?
           WHERE id = ?
-        `).run(name, providerName, modelName || null, type, id);
+        `).run(name, providerName, modelName || null, type, actualMaxContext, id);
       }
     } finally {
       db.close();
@@ -234,6 +247,7 @@ export class ProviderManager {
         isActive: number;
         modelName?: string;
         type: string;
+        maxContext?: number;
       } | undefined;
 
       if (!row) {
@@ -246,25 +260,25 @@ export class ProviderManager {
           if (googleKey && googleKey.trim()) {
             const id = "provider-default-google";
             db.prepare(`
-              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative");
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative", 32768);
             hasInsertedGenerative = true;
 
             const embedId = "provider-default-google-embed";
             db.prepare(`
-              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding");
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding", 0);
           }
 
           if (openRouterKey && openRouterKey.trim()) {
             const id = "provider-default-openrouter";
             const isActive = hasInsertedGenerative ? 0 : 1;
             db.prepare(`
-              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative");
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative", 32768);
           }
 
           const retryRow = db.prepare(`SELECT * FROM provider_instances WHERE isActive = 1 AND type = ?`).get(type) as {
@@ -275,6 +289,7 @@ export class ProviderManager {
             isActive: number;
             modelName?: string;
             type: string;
+            maxContext?: number;
           } | undefined;
 
           if (retryRow) {
@@ -286,6 +301,7 @@ export class ProviderManager {
               isActive: true,
               modelName: retryRow.modelName || undefined,
               type: retryRow.type as "generative" | "embedding",
+              maxContext: retryRow.maxContext !== undefined && retryRow.maxContext !== null ? retryRow.maxContext : (retryRow.type === "embedding" ? 0 : 32768),
             };
           }
         }
@@ -299,6 +315,7 @@ export class ProviderManager {
           isActive: number;
           modelName?: string;
           type: string;
+          maxContext?: number;
         } | undefined;
         if (firstRow) {
           db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(firstRow.id);
@@ -310,6 +327,7 @@ export class ProviderManager {
             isActive: true,
             modelName: firstRow.modelName || undefined,
             type: firstRow.type as "generative" | "embedding",
+            maxContext: firstRow.maxContext !== undefined && firstRow.maxContext !== null ? firstRow.maxContext : (firstRow.type === "embedding" ? 0 : 32768),
           };
         }
         return null;
@@ -323,6 +341,7 @@ export class ProviderManager {
         isActive: true,
         modelName: row.modelName || undefined,
         type: (row.type as "generative" | "embedding") || "generative",
+        maxContext: row.maxContext !== undefined && row.maxContext !== null ? row.maxContext : (row.type === "embedding" ? 0 : 32768),
       };
     } catch {
       const googleKey = process.env.GOOGLE_API_KEY;
@@ -336,6 +355,7 @@ export class ProviderManager {
             isActive: true,
             modelName: "gemini-embedding-001",
             type: "embedding",
+            maxContext: 0,
           };
         }
         return null;
@@ -351,6 +371,7 @@ export class ProviderManager {
           isActive: true,
           modelName: "gemini-2.5-flash",
           type: "generative",
+          maxContext: 32768,
         };
       }
       const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -363,6 +384,7 @@ export class ProviderManager {
           isActive: true,
           modelName: "google/gemini-2.5-flash",
           type: "generative",
+          maxContext: 32768,
         };
       }
       return null;

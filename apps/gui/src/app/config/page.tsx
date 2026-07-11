@@ -37,6 +37,7 @@ export default function ConfigPage() {
   const [editModel, setEditModel] = useState("gemini-2.5-flash");
   const [editIsActive, setEditIsActive] = useState(false);
   const [editType, setEditType] = useState<"generative" | "embedding">("generative");
+  const [editMaxContext, setEditMaxContext] = useState<number>(32768);
 
   useEffect(() => {
     if (selectedInstanceId === null) {
@@ -46,6 +47,7 @@ export default function ConfigPage() {
       setEditModel("gemini-2.5-flash");
       setEditIsActive(false);
       setEditType("generative");
+      setEditMaxContext(32768);
     } else if (selectedInstanceId === "new") {
       setEditName("");
       const defaultProvider = "google-genai";
@@ -55,6 +57,7 @@ export default function ConfigPage() {
       const pMeta = availableProviders.find((p) => p.id === defaultProvider);
       setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
       setEditIsActive(false);
+      setEditMaxContext(32768);
     } else {
       const inst = instances.find((i) => i.id === selectedInstanceId);
       if (inst) {
@@ -65,6 +68,7 @@ export default function ConfigPage() {
         const pMeta = availableProviders.find((p) => p.id === inst.providerName);
         setEditModel(inst.modelName || (inst.type === "embedding" ? pMeta?.defaultEmbeddingModel : pMeta?.defaultModel) || "gemini-2.5-flash");
         setEditIsActive(inst.isActive);
+        setEditMaxContext(inst.maxContext !== undefined && inst.maxContext !== null ? inst.maxContext : 32768);
       }
     }
   }, [selectedInstanceId, instances, availableProviders]);
@@ -132,13 +136,14 @@ export default function ConfigPage() {
           setLoading(false);
           return;
         }
-        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined, editType);
+        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined, editType, editType === "generative" ? editMaxContext : 0);
         if (editIsActive) {
           await setActiveProviderInstance(created.id);
         }
         targetInstanceId = created.id;
         setSelectedInstanceId(created.id);
       } else {
+        if (!selectedInstanceId) return;
         const inst = instances.find((i) => i.id === selectedInstanceId);
         if (inst && inst.type === "embedding") {
           const isMapped = mappings["embeddings"] === selectedInstanceId;
@@ -158,7 +163,7 @@ export default function ConfigPage() {
           }
         }
 
-        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined, editType);
+        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined, editType, editType === "generative" ? editMaxContext : 0);
         if (editIsActive) {
           await setActiveProviderInstance(selectedInstanceId);
         }
@@ -167,7 +172,7 @@ export default function ConfigPage() {
       await loadInstances();
       await loadMappings();
 
-      if (shouldRegenerate && targetInstanceId !== "new") {
+      if (shouldRegenerate && targetInstanceId && targetInstanceId !== "new") {
         await regenerateEmbeddings(targetInstanceId);
       }
     } catch (err) {
@@ -380,6 +385,23 @@ export default function ConfigPage() {
                           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                         />
                       </div>
+
+                      {editType === "generative" && (
+                        <div className="flex flex-col gap-1.5">
+                          <label htmlFor="formMaxContext" className="text-xs font-medium text-gray-700">
+                            Max Context Length (Tokens, 0 for infinite)
+                          </label>
+                          <input
+                            id="formMaxContext"
+                            type="number"
+                            value={editMaxContext}
+                            onChange={(e) => setEditMaxContext(parseInt(e.target.value) || 0)}
+                            min={0}
+                            placeholder="e.g. 32768"
+                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
+                          />
+                        </div>
+                      )}
 
                       <div className="mt-1 flex flex-row items-center gap-2">
                         <input

@@ -235,11 +235,12 @@ class SimulationManager {
       const providerName = inst ? inst.providerName : "google-genai";
       const modelName = inst ? inst.modelName : undefined;
       const instanceName = inst ? inst.name : undefined;
+      const maxContext = inst ? inst.maxContext : undefined;
 
       if (providerName === "google-genai") {
-        return new GeminiProvider(key, modelName, instanceName);
+        return new GeminiProvider(key, modelName, instanceName, maxContext);
       } else if (providerName === "openrouter") {
-        return new OpenRouterProvider(key, modelName, instanceName);
+        return new OpenRouterProvider(key, modelName, instanceName, maxContext);
       } else {
         return new MockLLMProvider([]);
       }
@@ -702,9 +703,9 @@ class SimulationManager {
         }
 
         if (inst.providerName === "google-genai") {
-          return new GeminiProvider(inst.apiKey, inst.modelName, inst.name);
+          return new GeminiProvider(inst.apiKey, inst.modelName, inst.name, inst.maxContext);
         } else if (inst.providerName === "openrouter") {
-          return new OpenRouterProvider(inst.apiKey, inst.modelName, inst.name);
+          return new OpenRouterProvider(inst.apiKey, inst.modelName, inst.name, inst.maxContext);
         } else {
           return new MockLLMProvider([]);
         }

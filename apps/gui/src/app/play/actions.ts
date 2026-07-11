@@ -243,8 +243,9 @@ export async function createProviderInstance(
   apiKey: string,
   modelName?: string,
   type: "generative" | "embedding" = "generative",
+  maxContext?: number,
 ): Promise<ModelProviderInstance> {
-  return ProviderManager.create(name, providerName, apiKey, modelName, type);
+  return ProviderManager.create(name, providerName, apiKey, modelName, type, maxContext);
 }
 
 export async function deleteProviderInstance(id: string): Promise<void> {
@@ -262,8 +263,9 @@ export async function updateProviderInstance(
   apiKey?: string,
   modelName?: string,
   type: "generative" | "embedding" = "generative",
+  maxContext?: number,
 ): Promise<void> {
-  ProviderManager.update(id, name, providerName, apiKey, modelName, type);
+  ProviderManager.update(id, name, providerName, apiKey, modelName, type, maxContext);
 }
 
 export async function getProviderMappings(): Promise<Record<string, string>> {

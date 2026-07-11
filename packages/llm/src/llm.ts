@@ -17,6 +17,7 @@ export interface LLMResponse<T> {
     totalTokens: number;
     modelName?: string;
     providerInstanceName?: string;
+    maxContext?: number;
   };
 }
 
@@ -29,6 +30,7 @@ export interface LLMCallRecord {
     totalTokens: number;
     modelName?: string;
     providerInstanceName?: string;
+    maxContext?: number;
   };
 }
 
@@ -53,6 +55,7 @@ export interface ModelProviderInstance {
   isActive: boolean;
   modelName?: string;
   type: "generative" | "embedding";
+  maxContext?: number;
 }
 
 export interface ModelProviderMeta {

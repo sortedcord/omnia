@@ -14,12 +14,14 @@ export class OpenRouterProvider implements ILLMProvider {
   private model: ChatOpenRouter;
   private modelNameUsed: string;
   private providerInstanceName?: string;
+  private maxContextUsed?: number;
   lastCalls: LLMCallRecord[] = [];
 
-  constructor(apiKey?: string, modelName?: string, providerInstanceName?: string) {
+  constructor(apiKey?: string, modelName?: string, providerInstanceName?: string, maxContext?: number) {
     let key = apiKey;
     let model = modelName;
     this.providerInstanceName = providerInstanceName;
+    this.maxContextUsed = maxContext;
 
     if (!key) {
       const active = ProviderManager.getActive("generative");
@@ -30,6 +32,9 @@ export class OpenRouterProvider implements ILLMProvider {
         }
         if (!this.providerInstanceName) {
           this.providerInstanceName = active.name;
+        }
+        if (this.maxContextUsed === undefined) {
+          this.maxContextUsed = active.maxContext;
         }
       }
     }
@@ -79,6 +84,7 @@ export class OpenRouterProvider implements ILLMProvider {
       totalTokens: raw?.usage_metadata?.total_tokens || 0,
       modelName: this.modelNameUsed,
       providerInstanceName: this.providerInstanceName || "Default",
+      maxContext: this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
     };
 
     this.lastCalls.push({
