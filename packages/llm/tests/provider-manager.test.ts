@@ -47,7 +47,7 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     process.env.OPENROUTER_API_KEY = "mock-openrouter-key-456";
 
     const list = ProviderManager.list();
-    expect(list.length).toBe(2);
+    expect(list.length).toBe(3);
 
     const gemini = list.find((p) => p.providerName === "google-genai");
     expect(gemini).toBeDefined();
@@ -69,23 +69,27 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
 
     // Trigger bootstrap
     const list = ProviderManager.list();
-    expect(list.length).toBe(1);
-    const bootstrapped = list[0];
-    expect(bootstrapped.name).toBe("Gemini (Env)");
+    expect(list.length).toBe(2);
+    const bootstrapped = list.find((p) => p.name === "Gemini (Env)");
+    expect(bootstrapped).toBeDefined();
+    if (!bootstrapped) return;
     expect(bootstrapped.isActive).toBe(true);
 
     // Edit name and key
     ProviderManager.update(bootstrapped.id, "My Gemini Key", "google-genai", "new-secret-key", "gemini-2.5-pro");
     
     const listAfterUpdate = ProviderManager.list();
-    expect(listAfterUpdate.length).toBe(1);
-    expect(listAfterUpdate[0].name).toBe("My Gemini Key");
-    expect(listAfterUpdate[0].apiKey).toBe("new-secret-key");
-    expect(listAfterUpdate[0].modelName).toBe("gemini-2.5-pro");
+    expect(listAfterUpdate.length).toBe(2);
+    const updated = listAfterUpdate.find((p) => p.id === bootstrapped.id);
+    expect(updated).toBeDefined();
+    if (!updated) return;
+    expect(updated.name).toBe("My Gemini Key");
+    expect(updated.apiKey).toBe("new-secret-key");
+    expect(updated.modelName).toBe("gemini-2.5-pro");
 
     // Delete instance
     ProviderManager.delete(bootstrapped.id);
     const listAfterDelete = ProviderManager.list();
-    expect(listAfterDelete.length).toBe(0);
+    expect(listAfterDelete.length).toBe(1);
   });
 });

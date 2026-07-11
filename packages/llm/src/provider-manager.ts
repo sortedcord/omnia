@@ -3,7 +3,16 @@ import path from "path";
 import fs from "fs";
 import type { ModelProviderInstance } from "./llm.js";
 
+let dbPathOverride: string | null = null;
 let hasBootstrapped = false;
+
+export function setDbPathOverride(p: string | null) {
+  dbPathOverride = p;
+}
+
+export function resetHasBootstrapped() {
+  hasBootstrapped = false;
+}
 
 function getWorkspaceRoot() {
   let current = process.cwd();
@@ -22,12 +31,17 @@ function getWorkspaceRoot() {
 }
 
 function getSettingsDb() {
-  const wsRoot = getWorkspaceRoot();
-  const dbDir = path.resolve(wsRoot, "data");
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+  let dbPath: string;
+  if (dbPathOverride) {
+    dbPath = dbPathOverride;
+  } else {
+    const wsRoot = getWorkspaceRoot();
+    const dbDir = path.resolve(wsRoot, "data");
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    dbPath = path.join(dbDir, "settings.db");
   }
-  const dbPath = path.join(dbDir, "settings.db");
   const db = new Database(dbPath);
   
   db.prepare(`

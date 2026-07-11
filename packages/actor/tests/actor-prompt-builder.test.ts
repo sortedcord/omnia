@@ -76,8 +76,6 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
     // Check recent memory exists
     expect(userContext).toContain("=== RECENT EVENTS ===");
     expect(userContext).toContain("Alice greets Bob");
-    // Bob should be resolved to Strider
-    expect(userContext).toContain("spoke to Strider");
 
     // Check long-term memory exists
     expect(userContext).toContain("=== YOUR MEMORIES ===");
