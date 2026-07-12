@@ -173,7 +173,8 @@ export function DashboardView() {
   };
 
   return (
-    <div className="mx-auto max-w-[800px] px-10 py-12">
+    <div className="flex-1 overflow-y-auto w-full">
+      <div className="mx-auto max-w-[800px] px-10 py-12">
       <div className="animate-fade-in">
         {/* Centered Big Logo */}
         <div className="flex flex-col items-center justify-center mb-10 pt-4">
@@ -361,5 +362,6 @@ export function DashboardView() {
         )}
       </div>
     </div>
+  </div>
   );
 }

@@ -42,8 +42,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en">
-      <body className={`${jersey25.variable} ${jetbrainsMono.variable} ${spaceMono.variable} min-h-dvh bg-background text-foreground font-sans`}>
-        <nav className="border-b border-dotted border-border/20 bg-secondary/30">
+      <body className={`${jersey25.variable} ${jetbrainsMono.variable} ${spaceMono.variable} flex flex-col h-dvh overflow-hidden bg-background text-foreground font-sans`}>
+        <nav className="border-b border-dotted border-border/20 bg-secondary/30 shrink-0">
           <div className="mx-auto max-w-[800px] px-10 py-3 flex items-center justify-center">
             <NavigationMenu viewport={false}>
               <NavigationMenuList>
@@ -68,7 +68,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </NavigationMenu>
           </div>
         </nav>
-        {children}
+        <main className="flex-1 flex flex-col min-h-0">
+          {children}
+        </main>
       </body>
     </html>
   );

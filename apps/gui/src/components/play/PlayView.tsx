@@ -265,6 +265,8 @@ export function PlayView() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<"interact" | "manage">("interact");
+
   const statusMessage = () => {
     if (!snapshot) return null;
     if (loading && statusText) return statusText;
@@ -303,130 +305,232 @@ export function PlayView() {
   if (!snapshot) return null;
 
   return (
-    <div className="mx-auto max-w-[800px] px-10 py-12 animate-fade-in">
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-1">
-          <h2 className="text-headline-md text-primary">{snapshot.scenarioName}</h2>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                pauseRequestedRef.current = true;
-                router.push("/");
-              }}
+    <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 border-r border-border/30 bg-card/40 flex flex-col justify-between shrink-0">
+        <div className="p-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono mb-4">Simulation</h3>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => setActiveTab("interact")}
+              className={cn(
+                "w-full text-left px-4 py-2.5 text-sm font-medium border transition-all duration-100",
+                activeTab === "interact"
+                  ? "border-primary bg-primary/10 text-primary shadow-[2px_2px_0_0_var(--primary)]"
+                  : "border-border/30 hover:bg-secondary text-foreground"
+              )}
             >
-              Dashboard
-            </Button>
-            {snapshot.status !== "done" && snapshot.status !== "error" && (
-              <>
-                {snapshot.status === "running" && (
-                  loading ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        pauseRequestedRef.current = true;
-                      }}
-                    >
-                      Pause
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => runSteps(snapshot.id)}
-                    >
-                      Resume
-                    </Button>
-                  )
-                )}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    pauseRequestedRef.current = true;
-                    router.push("/");
-                  }}
-                >
-                  Stop
-                </Button>
-              </>
-            )}
+              💬 Interact
+            </button>
+            <button
+              onClick={() => setActiveTab("manage")}
+              className={cn(
+                "w-full text-left px-4 py-2.5 text-sm font-medium border transition-all duration-100",
+                activeTab === "manage"
+                  ? "border-primary bg-primary/10 text-primary shadow-[2px_2px_0_0_var(--primary)]"
+                  : "border-border/30 hover:bg-secondary text-foreground"
+              )}
+            >
+              ⚙️ Manage
+            </button>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">{snapshot.scenarioDescription}</p>
-        <p className="text-sm font-medium text-primary mt-1">
-          {loading && "⏳ "}
-          {statusMessage()}
-        </p>
-      </div>
 
-      <div className="flex flex-col gap-4 mb-6 max-h-[55vh] overflow-y-auto border border-border/20 bg-secondary/30 p-4 shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">
-        {(() => {
-          const playerEntity = snapshot.entities.find((e) => e.isPlayer);
-          return snapshot.log.map((entry, i) => (
-            <LogEntryCard
-              key={i}
-              entry={entry}
-              onShowPrompt={setSelectedEntryForModal}
-              isPlayerCard={entry.entityId === playerEntity?.id}
-            />
-          ));
-        })()}
-        {loading && (
-          <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2 font-mono">
-            <Spinner />
-            {statusText || "Processing..."}
+        <div className="p-6 border-t border-dotted border-border/20">
+          <Button
+            variant="outline"
+            className="w-full text-xs font-mono"
+            onClick={() => {
+              pauseRequestedRef.current = true;
+              router.push("/");
+            }}
+          >
+            ← Back to Home
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        {/* Sticky Header */}
+        <header className="sticky top-0 bg-background/95 backdrop-blur-xs border-b border-dotted border-border/20 px-8 py-5 z-10 flex flex-col gap-2 shrink-0">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <h2 className="text-headline-md text-primary font-head tracking-wide">{snapshot.scenarioName}</h2>
+              <p className="text-sm text-muted-foreground/90 mt-1 max-w-[550px]">{snapshot.scenarioDescription}</p>
+            </div>
+            {/* Simulation Global Controls */}
+            <div className="flex gap-2 shrink-0">
+              {snapshot.status !== "done" && snapshot.status !== "error" && (
+                <>
+                  {snapshot.status === "running" && (
+                    loading ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          pauseRequestedRef.current = true;
+                        }}
+                      >
+                        Pause
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => runSteps(snapshot.id)}
+                      >
+                        Resume
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      pauseRequestedRef.current = true;
+                      router.push("/");
+                    }}
+                  >
+                    Stop
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
+          <div className="flex items-center justify-between text-xs font-mono mt-1 pt-1.5 border-t border-border/10">
+            <span className="text-muted-foreground">Status: <span className="text-primary font-bold">{snapshot.status.toUpperCase()}</span></span>
+            <span className="text-muted-foreground">Turn: <span className="text-foreground font-bold">{snapshot.turn}</span></span>
+          </div>
+          <p className="text-xs font-medium text-primary mt-1 font-mono">
+            {loading && "⏳ "}
+            {statusMessage()}
+          </p>
+        </header>
+
+        {/* Scrollable Center Viewport */}
+        <main className="flex-1 overflow-y-auto px-8 py-6">
+          {activeTab === "interact" ? (
+            <div className="flex flex-col gap-4 max-w-[800px] mx-auto pb-12">
+              {(() => {
+                const playerEntity = snapshot.entities.find((e) => e.isPlayer);
+                return snapshot.log.map((entry, i) => (
+                  <LogEntryCard
+                    key={i}
+                    entry={entry}
+                    onShowPrompt={setSelectedEntryForModal}
+                    isPlayerCard={entry.entityId === playerEntity?.id}
+                  />
+                ));
+              })()}
+              {loading && (
+                <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2 font-mono">
+                  <Spinner />
+                  {statusText || "Processing..."}
+                </div>
+              )}
+              <div ref={logEndRef} />
+            </div>
+          ) : (
+            <div className="max-w-[800px] mx-auto space-y-6 pb-12">
+              {/* Simulation Info */}
+              <div className="border border-border/30 bg-card p-6 shadow-[2px_2px_0_0_var(--border)]">
+                <h3 className="text-headline-sm text-primary mb-4 border-b border-dotted border-border/20 pb-2">Simulation Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm font-mono">
+                  <div className="flex flex-col gap-1 border-b border-border/10 pb-2">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Session ID</span>
+                    <span className="text-foreground font-bold break-all">{snapshot.id}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 border-b border-border/10 pb-2">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Max Turns</span>
+                    <span className="text-foreground font-bold">{snapshot.maxTurns}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 border-b border-border/10 pb-2">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Turn Count</span>
+                    <span className="text-foreground font-bold">{snapshot.turn}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 border-b border-border/10 pb-2">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Entities Registered</span>
+                    <span className="text-foreground font-bold">{snapshot.entities.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Entities Involved */}
+              <div className="border border-border/30 bg-card p-6 shadow-[2px_2px_0_0_var(--border)]">
+                <h3 className="text-headline-sm text-primary mb-4 border-b border-dotted border-border/20 pb-2">Entities Involved</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {snapshot.entities.map((ent) => (
+                    <div key={ent.id} className="border border-border/20 bg-secondary/20 p-4 shadow-[1px_1px_0_0_var(--border)] flex justify-between items-center">
+                      <div>
+                        <strong className="text-sm text-foreground block font-head tracking-wide">{ent.name}</strong>
+                        <span className="text-xs text-muted-foreground font-mono block mt-1">ID: {ent.id}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {ent.isPlayer ? (
+                          <span className="bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 text-xs font-mono">PLAYER</span>
+                        ) : (
+                          <span className="bg-secondary/60 text-muted-foreground border border-border/20 px-2 py-0.5 text-xs font-mono">NPC</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Sticky Chat / Interaction Input Footer */}
+        {activeTab === "interact" && (
+          <footer className="sticky bottom-0 bg-background/95 backdrop-blur-xs border-t border-dotted border-border/20 px-8 py-4 z-10 shrink-0">
+            <div className="max-w-[800px] mx-auto">
+              {snapshot.status === "waiting_player" && snapshot.waitingEntity ? (
+                <div className="border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)]">
+                  <details className="mb-3">
+                    <summary className="cursor-pointer text-sm font-medium font-head text-primary select-none outline-none">
+                      <strong>Your context as {snapshot.waitingEntity.name}</strong>
+                    </summary>
+                    <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-[150px] overflow-y-auto mt-2 font-mono">
+                      {snapshot.waitingEntity.userContext}
+                    </pre>
+                  </details>
+
+                  <form onSubmit={handleSubmitAction} className="flex flex-col gap-2">
+                    <Textarea
+                      value={playerInput}
+                      onChange={(e) => setPlayerInput(e.target.value)}
+                      placeholder="Describe what your character does, says, or thinks..."
+                      rows={3}
+                      disabled={loading}
+                    />
+                    <Button type="submit" disabled={loading || !playerInput.trim()}>
+                      {loading ? "Processing..." : "Submit Action"}
+                    </Button>
+                  </form>
+                </div>
+              ) : (snapshot.status === "done" || snapshot.status === "error") ? (
+                <div className="flex justify-between items-center bg-card border border-border/30 p-4 shadow-[2px_2px_0_0_var(--border)]">
+                  <span className="text-sm font-mono text-muted-foreground">
+                    {snapshot.status === "error" ? "Simulation finished with an error." : "Simulation complete."}
+                  </span>
+                  <Button
+                    onClick={() => {
+                      router.push("/");
+                    }}
+                    size="sm"
+                  >
+                    {snapshot.status === "error" ? "Back to Dashboard" : "New Simulation"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </footer>
         )}
-        <div ref={logEndRef} />
       </div>
-
-      {snapshot.status === "waiting_player" && snapshot.waitingEntity && (
-        <div className="border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)]">
-          <details className="mb-3">
-            <summary className="cursor-pointer text-sm font-medium font-head text-primary">
-              <strong>
-                Your context as {snapshot.waitingEntity.name}
-              </strong>
-            </summary>
-            <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-[200px] overflow-y-auto mt-2 font-mono">
-              {snapshot.waitingEntity.userContext}
-            </pre>
-          </details>
-
-          <form onSubmit={handleSubmitAction} className="flex flex-col gap-2">
-            <Textarea
-              value={playerInput}
-              onChange={(e) => setPlayerInput(e.target.value)}
-              placeholder="Describe what your character does, says, or thinks..."
-              rows={3}
-              disabled={loading}
-            />
-            <Button
-              type="submit"
-              disabled={loading || !playerInput.trim()}
-            >
-              {loading ? "Processing..." : "Submit Action"}
-            </Button>
-          </form>
-        </div>
-      )}
-
-      {(snapshot.status === "done" || snapshot.status === "error") && (
-        <Button
-          onClick={() => {
-            router.push("/");
-          }}
-          className="mt-4"
-        >
-          {snapshot.status === "error" ? "Back to Dashboard" : "New Simulation"}
-        </Button>
-      )}
 
       {error && !loading && (
-        <div className="border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive mt-4">
+        <div className="fixed bottom-4 right-4 z-50 border border-destructive bg-destructive/90 text-destructive-foreground px-4 py-3 shadow-[3px_3px_0_0_var(--border)] text-sm">
           {error}
         </div>
       )}
