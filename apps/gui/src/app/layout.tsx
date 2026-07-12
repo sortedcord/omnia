@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Jersey_25, JetBrains_Mono, Space_Mono } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,22 +40,43 @@ const links = [
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
+  useEffect(() => {
+    document.title = "Omnia";
+  }, []);
+
   return (
     <html lang="en">
-      <body className={`${jersey25.variable} ${jetbrainsMono.variable} ${spaceMono.variable} flex flex-col h-dvh overflow-hidden bg-background text-foreground font-sans`}>
+      <body
+        className={`${jersey25.variable} ${jetbrainsMono.variable} ${spaceMono.variable} flex flex-col h-dvh overflow-hidden bg-background text-foreground font-sans`}
+      >
+        {!pathname?.startsWith("/play") && (
+          <video
+            className="fixed inset-0 w-full h-full object-cover pointer-events-none"
+            src="/output.webm"
+            poster="/background.png"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+        )}
         <nav className="border-b border-dotted border-border/20 bg-secondary/30 shrink-0">
           <div className="mx-auto max-w-[800px] px-10 py-3 flex items-center justify-center">
             <NavigationMenu viewport={false}>
               <NavigationMenuList>
                 {links.map((link) => {
-                  const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
+                  const isActive =
+                    pathname === link.href ||
+                    (link.href !== "/" && pathname?.startsWith(link.href));
                   return (
                     <NavigationMenuItem key={link.href}>
                       <NavigationMenuLink asChild active={isActive}>
                         <Link
                           href={link.href}
                           className={`text-foreground no-underline font-medium text-sm p-2 transition-all outline-none ${
-                            isActive ? "bg-primary/15 text-primary" : "hover:bg-secondary hover:text-foreground"
+                            isActive
+                              ? "bg-primary/15 text-primary"
+                              : "hover:bg-secondary hover:text-foreground"
                           }`}
                         >
                           {link.label}
@@ -68,9 +89,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </NavigationMenu>
           </div>
         </nav>
-        <main className="flex-1 flex flex-col min-h-0">
-          {children}
-        </main>
+        <main className="flex-1 flex flex-col min-h-0">{children}</main>
       </body>
     </html>
   );
