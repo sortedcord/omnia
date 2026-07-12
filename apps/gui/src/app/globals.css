@@ -52,6 +52,15 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
   --color-surface-bright: var(--surface-bright);
@@ -85,6 +94,15 @@
   --input: #fff8f5;
   --ring: #e58e58;
 
+  --sidebar: #fcf3e8;
+  --sidebar-foreground: #201a16;
+  --sidebar-primary: #e58e58;
+  --sidebar-primary-foreground: #201a16;
+  --sidebar-accent: #ffd966;
+  --sidebar-accent-foreground: #201a16;
+  --sidebar-border: #5c544e;
+  --sidebar-ring: #e58e58;
+
   --surface: #fff8f5;
   --surface-dim: #e4d8d0;
   --surface-bright: #fff8f5;
@@ -116,6 +134,15 @@
   --border: #877369;
   --input: #362f2a;
   --ring: #e58e58;
+
+  --sidebar: #201a16;
+  --sidebar-foreground: #fff8f5;
+  --sidebar-primary: #e58e58;
+  --sidebar-primary-foreground: #201a16;
+  --sidebar-accent: #c1a032;
+  --sidebar-accent-foreground: #201a16;
+  --sidebar-border: #877369;
+  --sidebar-ring: #e58e58;
 
   --surface: #201a16;
   --surface-dim: #362f2a;
