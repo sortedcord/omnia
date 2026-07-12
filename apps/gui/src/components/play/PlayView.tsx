@@ -6,7 +6,7 @@ import {
   stepSimulation,
   submitPlayerAction,
   resumeSimulation,
-} from "@/app/play/actions";
+} from "@/app/actions";
 import type { SimSnapshot } from "@/lib/simulation-types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

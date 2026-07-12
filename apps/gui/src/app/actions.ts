@@ -123,10 +123,10 @@ export async function getConfigStatus(): Promise<{
   apiKeySet: boolean;
   apiKeyPreview: string;
   model: string;
-  availableScenarios: { path: string; name: string }[];
+  availableScenarios: { path: string; name: string; description: string }[];
 }> {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const scenarios: { path: string; name: string }[] = [];
+  const scenarios: { path: string; name: string; description: string }[] = [];
 
   const cwd = process.cwd();
   const candidates = [
@@ -150,6 +150,7 @@ export async function getConfigStatus(): Promise<{
           scenarios.push({
             path: `content/demo/scenarios/${file}`,
             name: content.name || file,
+            description: content.description || "",
           });
         } catch {
           /* skip invalid */

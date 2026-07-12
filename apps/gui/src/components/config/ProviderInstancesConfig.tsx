@@ -7,7 +7,7 @@ import {
   setActiveProviderInstance,
   regenerateEmbeddings,
   deleteProviderInstance,
-} from "@/app/play/actions";
+} from "@/app/actions";
 import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
