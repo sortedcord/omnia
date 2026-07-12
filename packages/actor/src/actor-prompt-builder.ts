@@ -106,7 +106,9 @@ Guidelines:
     if (this.bufferRepo) {
       try {
         recentEntries = this.bufferRepo.listForOwner(entity.id);
-      } catch {}
+      } catch {
+        // bufferRepo may not be available
+      }
     }
 
     // --- Recent memory ---

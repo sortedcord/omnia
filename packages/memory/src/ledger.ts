@@ -92,28 +92,27 @@ export class LedgerRepository {
     })();
   }
 
-  private mapRowToEntry(row: any, involvedEntityIds: string[]): LedgerEntry {
-    let embedding: number[] = [];
-    if (row.embedding) {
-      const buffer = row.embedding as Buffer;
-      const floatArray = new Float32Array(
-        buffer.buffer,
-        buffer.byteOffset,
-        buffer.byteLength / Float32Array.BYTES_PER_ELEMENT
-      );
-      embedding = Array.from(floatArray);
-    }
+  private mapRowToEntry(row: Record<string, unknown>, involvedEntityIds: string[]): LedgerEntry {
+    const embedding: number[] = row.embedding
+      ? Array.from(
+          new Float32Array(
+            (row.embedding as Buffer).buffer,
+            (row.embedding as Buffer).byteOffset,
+            (row.embedding as Buffer).byteLength / Float32Array.BYTES_PER_ELEMENT
+          )
+        )
+      : [];
 
     return {
-      id: row.id,
-      ownerId: row.owner_id,
-      timestamp: row.timestamp,
-      locationId: row.location_id,
+      id: row.id as string,
+      ownerId: row.owner_id as string,
+      timestamp: row.timestamp as string,
+      locationId: row.location_id as string | null,
       involvedEntityIds,
-      content: row.content,
-      quotes: JSON.parse(row.quotes_json || "[]"),
-      importance: row.importance,
-      embedding: embedding,
+      content: row.content as string,
+      quotes: JSON.parse((row.quotes_json as string) || "[]"),
+      importance: row.importance as number,
+      embedding,
     };
   }
 
@@ -126,7 +125,7 @@ export class LedgerRepository {
       WHERE id = ?
     `
       )
-      .get(id) as any;
+      .get(id) as Record<string, unknown> | undefined;
 
     if (!row) return null;
 
@@ -163,7 +162,7 @@ export class LedgerRepository {
           le.importance >= 8
     `;
 
-    const params: any[] = [ownerId];
+    const params: (string | number)[] = [ownerId];
 
     if (currentLocationId) {
       query += ` OR le.location_id = ?`;
@@ -183,7 +182,7 @@ export class LedgerRepository {
     `;
     params.push(limit);
 
-    const rows = this.db.prepare(query).all(...params) as any[];
+    const rows = this.db.prepare(query).all(...params) as Record<string, any>[];
 
     if (rows.length === 0) return [];
 
@@ -223,7 +222,7 @@ export class LedgerRepository {
       LIMIT 1
     `
       )
-      .get(ownerId, timestamp) as any;
+      .get(ownerId, timestamp) as Record<string, unknown> | undefined;
 
     if (preceding) {
       neighbors.push(this.mapRowToEntry(preceding, []));
@@ -240,7 +239,7 @@ export class LedgerRepository {
       LIMIT 1
     `
       )
-      .get(ownerId, timestamp) as any;
+      .get(ownerId, timestamp) as Record<string, unknown> | undefined;
 
     if (succeeding) {
       neighbors.push(this.mapRowToEntry(succeeding, []));
@@ -310,7 +309,7 @@ export class LedgerRepository {
     scored.sort((a, b) => b.score - a.score);
     const selected = scored.slice(0, limit).map((s) => s.entry);
 
-    let finalEntries = [...selected];
+    const finalEntries = [...selected];
 
     // Optionally retrieve associative neighbors
     if (includeAssociativeNeighbors && selected.length > 0) {

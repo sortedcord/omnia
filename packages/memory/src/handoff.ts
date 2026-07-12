@@ -154,7 +154,7 @@ export function splitBufferForHandoff(
     "several minutes ago",
   ]);
 
-  let watermarkStartIndex = sorted.length;
+  let watermarkStartIndex: number;
 
   // 1. Mark last K entries as watermark
   if (sorted.length > K) {
@@ -243,7 +243,7 @@ ${candidatesList}
 
     const ledgerEntries: LedgerEntry[] = [];
     for (const chunk of result.chunks) {
-      let embedding: number[] = [];
+      let embedding: number[];
       try {
         embedding = await this.embedProvider.embed(chunk.content);
       } catch (err) {

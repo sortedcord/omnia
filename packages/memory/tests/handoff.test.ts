@@ -152,7 +152,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
     const success = await engine.runHandoff(entity, entries, now);
     expect(success).toBe(true);
 
-    const ledgerRows = db.prepare("SELECT * FROM ledger_entries WHERE owner_id = ?").all("alice") as any[];
+    const ledgerRows = db.prepare("SELECT * FROM ledger_entries WHERE owner_id = ?").all("alice") as Record<string, unknown>[];
     expect(ledgerRows.length).toBe(1);
     expect(ledgerRows[0].content).toBe("Alice initiated dialogue and performed various tasks.");
     expect(JSON.parse(ledgerRows[0].quotes_json)).toEqual(["Event 0"]);

@@ -5,8 +5,6 @@ interface PromptSwitcherProps {
   onTabChange: (tab: "actor" | "decoder") => void;
   hasActor: boolean;
   hasDecoder: boolean;
-  showActorStats: boolean;
-  showDecoderStats: boolean;
 }
 
 export function PromptSwitcher({
@@ -14,8 +12,6 @@ export function PromptSwitcher({
   onTabChange,
   hasActor,
   hasDecoder,
-  showActorStats,
-  showDecoderStats,
 }: PromptSwitcherProps) {
   return (
     <div className="flex items-center justify-center gap-4 border-b bg-muted/50 px-5 py-4">

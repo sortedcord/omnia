@@ -202,8 +202,6 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
           onTabChange={setActiveTab}
           hasActor={!!entry.rawPrompt}
           hasDecoder={!!entry.decoderPrompt}
-          showActorStats={!!entry.usage}
-          showDecoderStats={!!entry.decoderUsage}
         />
 
         <div className="overflow-y-auto flex-1 p-5">

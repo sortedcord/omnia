@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { WorldState, Entity, AttributeVisibility } from "@omnia/core";
+import { WorldState, Entity } from "@omnia/core";
 import { BufferRepository, LedgerRepository } from "@omnia/memory";
 import { ActorPromptBuilder } from "../src/actor-prompt-builder";
 

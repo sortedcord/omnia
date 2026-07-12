@@ -42,7 +42,7 @@ export function DashboardView() {
 
   const [savedSessions, setSavedSessions] = useState<SimSnapshot[]>([]);
   const [scenarios, setScenarios] = useState<{ path: string; name: string; description: string }[]>([]);
-  const [providerInstances, setProviderInstances] = useState<ModelProviderInstance[]>([]);
+  const [, setProviderInstances] = useState<ModelProviderInstance[]>([]);
 
   // Modal State
   const [scenarioForModal, setScenarioForModal] = useState<{ path: string; name: string } | null>(null);
@@ -57,7 +57,7 @@ export function DashboardView() {
         setSavedSessions(res.sessions);
       }
     } catch {
-      // ignore
+      // sessions load failed, ignore
     }
   }, []);
 
@@ -70,21 +70,27 @@ export function DashboardView() {
         if (active && sessionsRes.ok) {
           setSavedSessions(sessionsRes.sessions);
         }
-      } catch {}
+      } catch {
+        // session load failed, ignore
+      }
 
       try {
         const configStatus = await getConfigStatus();
         if (active) {
           setScenarios(configStatus.availableScenarios);
         }
-      } catch {}
+      } catch {
+        // scenarios load failed, ignore
+      }
 
       try {
         const providersList = await listProviderInstances();
         if (active) {
           setProviderInstances(providersList);
         }
-      } catch {}
+      } catch {
+        // providers load failed, ignore
+      }
 
       if (active) {
         setLoadingData(false);
