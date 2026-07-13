@@ -29,6 +29,10 @@ export default defineConfig({
           label: "Guides",
           items: [{ autogenerate: { directory: "guides" } }],
         },
+        {
+          label: "Diary",
+          items: [{ autogenerate: { directory: "diary" } }],
+        },
       ],
       editLink: {
         baseUrl: "https://github.com/sortedcord/omnia/edit/main/web/docs/",
