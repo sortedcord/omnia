@@ -44,7 +44,9 @@ export function DashboardView() {
   const [scenarios, setScenarios] = useState<
     { path: string; name: string; description: string }[]
   >([]);
-  const [, setProviderInstances] = useState<ModelProviderInstance[]>([]);
+  const [providerInstances, setProviderInstances] = useState<
+    ModelProviderInstance[]
+  >([]);
 
   // Modal State
   const [scenarioForModal, setScenarioForModal] = useState<{
@@ -203,6 +205,24 @@ export function DashboardView() {
             </div>
           )}
 
+          {providerInstances.length === 0 && !loadingData && (
+            <div className="mb-6 border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-600 flex flex-col gap-2">
+              <span className="font-semibold flex items-center gap-1">
+                ⚠️ No LLM providers have been configured.
+              </span>
+              <span>
+                Please go to the{" "}
+                <Link
+                  href="/config"
+                  className="underline font-medium hover:text-yellow-700"
+                >
+                  Configuration
+                </Link>{" "}
+                page to set up at least one provider before running simulations.
+              </span>
+            </div>
+          )}
+
           {/* Simulations Section */}
           <section className="mb-10">
             <h2 className="text-headline-lg text-primary mb-6 animate-fade-in">
@@ -235,8 +255,16 @@ export function DashboardView() {
                 {savedSessions.map((s) => (
                   <div
                     key={s.id}
-                    onClick={() => handleResume(s.id)}
-                    className="flex-shrink-0 w-72 border border-border/30 bg-card p-5 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all relative group"
+                    onClick={
+                      providerInstances.length === 0
+                        ? undefined
+                        : () => handleResume(s.id)
+                    }
+                    className={`flex-shrink-0 w-72 border border-border/30 bg-card p-5 shadow-sm transition-all relative group ${
+                      providerInstances.length === 0
+                        ? "opacity-50 cursor-not-allowed filter grayscale"
+                        : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"
+                    }`}
                   >
                     <div className="flex flex-col gap-1 text-sm mb-4">
                       <strong className="text-body-md text-foreground block">
@@ -337,6 +365,7 @@ export function DashboardView() {
                     name={s.name}
                     description={s.description}
                     onClick={() => handleScenarioClick(s)}
+                    disabled={providerInstances.length === 0}
                   />
                 ))}
               </div>
