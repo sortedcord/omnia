@@ -88,10 +88,9 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
       ],
     };
 
-    // 3. Architect: dialogue is always valid (0 min), action is valid (2 min).
+    // 3. Architect: dialogue is always valid (1 min), action is valid (2 min).
     //    NOTE: monologue never reaches the validator/delta generator.
     const mockDialogueValidation = { isValid: true, reason: "Alice can speak." };
-    const mockDialogueTimeDelta = { minutesToAdvance: 0, explanation: "Speech is instantaneous." };
     const mockActionValidation = { isValid: true, reason: "The ledger is within reach." };
     const mockActionTimeDelta = { minutesToAdvance: 2, explanation: "Reaching for the ledger takes 2 minutes." };
 
@@ -99,9 +98,8 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
       mockActorProse,             // 1. Actor generation
       mockDecodedSequence,        // 2. IntentDecoder
       mockDialogueValidation,     // 3. Architect.validateIntent (dialogue)
-      mockDialogueTimeDelta,      // 4. TimeDeltaGenerator (dialogue)
-      mockActionValidation,       // 5. Architect.validateIntent (action)
-      mockActionTimeDelta,        // 6. TimeDeltaGenerator (action)
+      mockActionValidation,       // 4. Architect.validateIntent (action)
+      mockActionTimeDelta,        // 5. TimeDeltaGenerator (action)
     ]);
 
     const actor = new ActorAgent(llmProvider, bufferRepo);
@@ -143,7 +141,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
     expect(intents[0].type).toBe("monologue");
     expect(writtenEntries[0].outcome).toBeUndefined();
 
-    // 4. Dialogue: valid, 0-minute delta, no outcome field.
+    // 4. Dialogue: valid, 1-minute delta, no outcome field.
     expect(writtenEntries[1].outcome).toBeUndefined();
 
     // 5. Action: valid, 2-minute delta, outcome attached.
@@ -152,8 +150,8 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
       reason: "The ledger is within reach.",
     });
 
-    // 6. Clock advanced by exactly 2 minutes (dialogue 0 + action 2).
-    const expectedTime = new Date(startTime.getTime() + 2 * 60_000);
+    // 6. Clock advanced by exactly 3 minutes (dialogue 1 + action 2).
+    const expectedTime = new Date(startTime.getTime() + 3 * 60_000);
     expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
 
     // 7. All three intents persisted to Alice's memory buffer.

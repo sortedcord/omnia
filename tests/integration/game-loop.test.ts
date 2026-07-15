@@ -52,7 +52,6 @@ describe("Omnia Integration Tests (Tier 2)", () => {
 
     // 2. Architect validation & delta generation responses
     const mockDialogueValidation = { isValid: true, reason: "Alice is able to speak to Bob." };
-    const mockDialogueTimeDelta = { minutesToAdvance: 0, explanation: "Dialogue is instantaneous." };
 
     const mockActionValidation = { isValid: true, reason: "The door is unlocked and reachable." };
     const mockActionTimeDelta = { minutesToAdvance: 3, explanation: "Creeping silently and opening a door takes 3 minutes." };
@@ -60,7 +59,6 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     const llmProvider = new MockLLMProvider([
       mockIntentSequence,       // Used by IntentDecoder
       mockDialogueValidation,   // Used by Architect.validateIntent (Dialogue)
-      mockDialogueTimeDelta,    // Used by TimeDeltaGenerator (Dialogue)
       mockActionValidation,     // Used by Architect.validateIntent (Action)
       mockActionTimeDelta       // Used by TimeDeltaGenerator (Action)
     ]);
@@ -77,7 +75,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     // 2. Process first intent (dialogue)
     const result1 = await architect.processIntent(world, decodedSequence.intents[0]);
     expect(result1.isValid).toBe(true);
-    expect(result1.timeDelta!.minutesToAdvance).toBe(0);
+    expect(result1.timeDelta!.minutesToAdvance).toBe(1);
 
     // 3. Process second intent (action)
     const result2 = await architect.processIntent(world, decodedSequence.intents[1]);
@@ -85,7 +83,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     expect(result2.timeDelta!.minutesToAdvance).toBe(3);
 
     // 4. Verify local state clock advanced by the time deltas
-    const expectedTime = new Date(startTime.getTime() + 3 * 60_000); // 3 minutes total
+    const expectedTime = new Date(startTime.getTime() + 4 * 60_000); // 4 minutes total (dialogue 1 + action 3)
     expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
 
     // 5. Verify database state clock was advanced and persisted
@@ -133,12 +131,10 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     const mockActionValidation = { isValid: false, reason: "Hairpins cannot pick high-security locks." };
     // For intent2 (dialogue):
     const mockDialogueValidation = { isValid: true, reason: "Alice is free to talk." };
-    const mockDialogueTimeDelta = { minutesToAdvance: 1, explanation: "Speaking takes 1 minute." };
 
     const llmProvider = new MockLLMProvider([
       mockActionValidation,     // Used by Architect.validateIntent (Action)
       mockDialogueValidation,   // Used by Architect.validateIntent (Dialogue)
-      mockDialogueTimeDelta     // Used by TimeDeltaGenerator (Dialogue)
     ]);
 
     const architect = new Architect(llmProvider, repo);

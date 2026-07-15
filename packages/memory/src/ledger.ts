@@ -186,7 +186,7 @@ export class LedgerRepository {
 
     if (rows.length === 0) return [];
 
-    const entryIds = rows.map((r) => r.id);
+    const entryIds = rows.map((r) => r.id as string);
     const placeholders = entryIds.map(() => "?").join(",");
     const entitiesRows = this.db
       .prepare(
@@ -205,7 +205,7 @@ export class LedgerRepository {
       entitiesMap.get(er.entry_id)!.push(er.entity_id);
     }
 
-    return rows.map((row) => this.mapRowToEntry(row, entitiesMap.get(row.id) || []));
+    return rows.map((row) => this.mapRowToEntry(row, entitiesMap.get(row.id as string) || []));
   }
 
   private fetchRawNeighbors(ownerId: string, timestamp: string): LedgerEntry[] {
