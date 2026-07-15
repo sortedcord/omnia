@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +43,39 @@ export function MetadataTab({
     ]);
   };
 
+  // Parse initial state from ISO string (or fallback to now)
+  const parsedDate = useMemo(() => {
+    try {
+      const d = new Date(startTime);
+      if (isNaN(d.getTime())) return new Date();
+      return d;
+    } catch {
+      return new Date();
+    }
+  }, [startTime]);
+
+  const dateValue = useMemo(() => {
+    return parsedDate.toISOString().split("T")[0];
+  }, [parsedDate]);
+
+  const timeValue = useMemo(() => {
+    return parsedDate.toISOString().split("T")[1].slice(0, 8);
+  }, [parsedDate]);
+
+  const handleDateChange = (newDateStr: string) => {
+    if (!newDateStr) return;
+    const combined = `${newDateStr}T${timeValue}.000Z`;
+    setStartTime(combined);
+  };
+
+  const handleTimeChange = (newTimeStr: string) => {
+    if (!newTimeStr) return;
+    const formattedTime =
+      newTimeStr.split(":").length === 2 ? `${newTimeStr}:00` : newTimeStr;
+    const combined = `${dateValue}T${formattedTime}.000Z`;
+    setStartTime(combined);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
       {/* Basic Fields */}
@@ -55,14 +89,9 @@ export function MetadataTab({
             <Label htmlFor="sc-id">Scenario Template ID</Label>
             <Input
               id="sc-id"
-              placeholder="e.g. my-custom-scenario"
               value={scenarioId}
-              onChange={(e) =>
-                setScenarioId(
-                  e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""),
-                )
-              }
-              className="font-mono text-xs"
+              readOnly
+              className="font-mono text-xs bg-muted cursor-not-allowed text-muted-foreground"
             />
             <span className="text-[10px] text-muted-foreground">
               Unique filename ID. Alphanumeric, hyphens and underscores only.
@@ -70,16 +99,28 @@ export function MetadataTab({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="sc-start">Start Time (ISO Date)</Label>
-            <Input
-              id="sc-start"
-              placeholder="e.g. 2026-07-06T12:00:00.000Z"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="font-mono text-xs"
-            />
+            <Label>Start Time</Label>
+            <div className="flex gap-2">
+              <div className="flex-1 space-y-1">
+                <Input
+                  type="date"
+                  value={dateValue}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="text-xs font-mono"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <Input
+                  type="time"
+                  step="1"
+                  value={timeValue}
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                  className="text-xs font-mono"
+                />
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground">
-              Global clock starting timestamp.
+              Global clock starting date and time (stored in ISO UTC).
             </span>
           </div>
         </div>

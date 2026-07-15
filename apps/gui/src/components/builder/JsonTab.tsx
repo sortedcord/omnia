@@ -30,7 +30,7 @@ export function JsonTab({ compiledScenario, onCopySuccess }: JsonTabProps) {
           </Button>
         </div>
       </div>
-      <pre className="flex-1 bg-black/40 border border-border/10 p-4 rounded overflow-auto font-mono text-xs text-emerald-400 select-text leading-relaxed">
+      <pre className="flex-1 bg-black border border-border/10 p-4 rounded overflow-auto font-mono text-xs text-emerald-400 select-text leading-relaxed">
         {JSON.stringify(compiledScenario, null, 2)}
       </pre>
     </div>

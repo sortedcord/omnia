@@ -4,6 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { AttributeEditor } from "./AttributeEditor";
 import { Plus, Trash2 } from "lucide-react";
 import type { LocationData, ConnectionData, EntityData } from "./types";
@@ -162,25 +170,30 @@ export function LocationsTab({
 
               <div className="space-y-1.5">
                 <Label>Parent Location (Optional)</Label>
-                <select
-                  className="bg-card border border-border/30 px-3 py-1.5 text-xs outline-none w-full rounded"
+                <Combobox
+                  items={locationIds.filter((id) => id !== selectedLoc.id)}
                   value={selectedLoc.parentId || ""}
-                  onChange={(e) => {
+                  onValueChange={(value) => {
                     const copy = [...locations];
-                    copy[selectedLocIndex].parentId =
-                      e.target.value || undefined;
+                    copy[selectedLocIndex].parentId = value || undefined;
                     setLocations(copy);
                   }}
                 >
-                  <option value="">-- No parent --</option>
-                  {locationIds
-                    .filter((id) => id !== selectedLoc.id)
-                    .map((id) => (
-                      <option key={id} value={id}>
-                        {getLocationDisplayNameById(id, locations)}
-                      </option>
-                    ))}
-                </select>
+                  <ComboboxInput
+                    placeholder="Select a parent location..."
+                    showClear
+                  />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No locations found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(id: string) => (
+                        <ComboboxItem key={id} value={id}>
+                          {getLocationDisplayNameById(id, locations)}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </div>
 
               {/* Attributes for Location */}
@@ -257,27 +270,35 @@ export function LocationsTab({
                           <span className="text-[10px] font-semibold text-muted-foreground">
                             Target Location
                           </span>
-                          <select
-                            className="bg-card border border-border/30 px-2 py-1 text-xs outline-none w-full rounded"
+                          <Combobox
+                            items={locationIds.filter(
+                              (id) => id !== selectedLoc.id,
+                            )}
                             value={conn.targetId}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateLocationConnection(
                                 selectedLocIndex,
                                 connIdx,
                                 "targetId",
-                                e.target.value,
+                                value ?? "",
                               )
                             }
                           >
-                            <option value="">-- Choose target --</option>
-                            {locationIds
-                              .filter((id) => id !== selectedLoc.id)
-                              .map((id) => (
-                                <option key={id} value={id}>
-                                  {getLocationDisplayNameById(id, locations)}
-                                </option>
-                              ))}
-                          </select>
+                            <ComboboxInput
+                              placeholder="Choose target..."
+                              showClear
+                            />
+                            <ComboboxContent>
+                              <ComboboxEmpty>No locations found.</ComboboxEmpty>
+                              <ComboboxList>
+                                {(id: string) => (
+                                  <ComboboxItem key={id} value={id}>
+                                    {getLocationDisplayNameById(id, locations)}
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxContent>
+                          </Combobox>
                         </div>
 
                         <div className="space-y-1">
