@@ -20,7 +20,7 @@ export function JsonTab({ compiledScenario, onCopySuccess }: JsonTabProps) {
             size="sm"
             onClick={() => {
               navigator.clipboard.writeText(
-                JSON.stringify(compiledScenario, null, 2)
+                JSON.stringify(compiledScenario, null, 2),
               );
               onCopySuccess();
             }}

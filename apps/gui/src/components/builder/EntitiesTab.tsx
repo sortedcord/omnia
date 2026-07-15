@@ -124,7 +124,8 @@ export function EntitiesTab({
                 value={selectedEnt.locationId || ""}
                 onChange={(e) => {
                   const copy = [...entities];
-                  copy[selectedEntIndex].locationId = e.target.value || undefined;
+                  copy[selectedEntIndex].locationId =
+                    e.target.value || undefined;
                   setEntities(copy);
                 }}
               >
@@ -151,7 +152,12 @@ export function EntitiesTab({
                   const copy = [...entities];
                   copy[selectedEntIndex].attributes = [
                     ...copy[selectedEntIndex].attributes,
-                    { name: "", value: "", visibility: "PUBLIC", allowedEntities: [] },
+                    {
+                      name: "",
+                      value: "",
+                      visibility: "PUBLIC",
+                      allowedEntities: [],
+                    },
                   ];
                   setEntities(copy);
                 }}
@@ -175,7 +181,7 @@ export function EntitiesTab({
                   onClick={() => {
                     const copy = [...entities];
                     const target = entityIds.find(
-                      (id) => id !== selectedEnt.id && !selectedEnt.aliases[id]
+                      (id) => id !== selectedEnt.id && !selectedEnt.aliases[id],
                     );
                     if (target) {
                       copy[selectedEntIndex].aliases = {
@@ -194,47 +200,50 @@ export function EntitiesTab({
 
               {Object.keys(selectedEnt.aliases || {}).length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
-                  No descriptive aliases configured. Defaults to actual entity ID.
+                  No descriptive aliases configured. Defaults to actual entity
+                  ID.
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {Object.entries(selectedEnt.aliases).map(([targetId, aliasText]) => (
-                    <div
-                      key={targetId}
-                      className="flex gap-2 items-center bg-secondary/15 p-2 rounded"
-                    >
-                      <span className="text-[11px] font-mono text-muted-foreground w-1/3 truncate">
-                        {targetId}
-                      </span>
-                      <ChevronRight className="size-3 text-muted-foreground shrink-0" />
-                      <Input
-                        placeholder="Descriptive name (e.g. the guard)"
-                        value={aliasText}
-                        onChange={(e) => {
-                          const copy = [...entities];
-                          copy[selectedEntIndex].aliases = {
-                            ...selectedEnt.aliases,
-                            [targetId]: e.target.value,
-                          };
-                          setEntities(copy);
-                        }}
-                        className="h-7 text-xs flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const copy = [...entities];
-                          const updated = { ...selectedEnt.aliases };
-                          delete updated[targetId];
-                          copy[selectedEntIndex].aliases = updated;
-                          setEntities(copy);
-                        }}
-                        className="text-muted-foreground hover:text-destructive cursor-pointer"
+                  {Object.entries(selectedEnt.aliases).map(
+                    ([targetId, aliasText]) => (
+                      <div
+                        key={targetId}
+                        className="flex gap-2 items-center bg-secondary/15 p-2 rounded"
                       >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                        <span className="text-[11px] font-mono text-muted-foreground w-1/3 truncate">
+                          {targetId}
+                        </span>
+                        <ChevronRight className="size-3 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Descriptive name (e.g. the guard)"
+                          value={aliasText}
+                          onChange={(e) => {
+                            const copy = [...entities];
+                            copy[selectedEntIndex].aliases = {
+                              ...selectedEnt.aliases,
+                              [targetId]: e.target.value,
+                            };
+                            setEntities(copy);
+                          }}
+                          className="h-7 text-xs flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const copy = [...entities];
+                            const updated = { ...selectedEnt.aliases };
+                            delete updated[targetId];
+                            copy[selectedEntIndex].aliases = updated;
+                            setEntities(copy);
+                          }}
+                          className="text-muted-foreground hover:text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    ),
+                  )}
                 </div>
               )}
             </div>
@@ -275,7 +284,8 @@ export function EntitiesTab({
                 </Button>
               </div>
 
-              {!selectedEnt.initialMemories || selectedEnt.initialMemories.length === 0 ? (
+              {!selectedEnt.initialMemories ||
+              selectedEnt.initialMemories.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
                   No initial memories loaded. Entities will start blank.
                 </p>
@@ -291,7 +301,9 @@ export function EntitiesTab({
                         onClick={() => {
                           const copy = [...entities];
                           copy[selectedEntIndex].initialMemories =
-                            selectedEnt.initialMemories.filter((_, i) => i !== memIdx);
+                            selectedEnt.initialMemories.filter(
+                              (_, i) => i !== memIdx,
+                            );
                           setEntities(copy);
                         }}
                         className="absolute top-2 right-2 text-muted-foreground hover:text-destructive cursor-pointer"
@@ -309,8 +321,10 @@ export function EntitiesTab({
                             value={mem.intent.type}
                             onChange={(e) => {
                               const copy = [...entities];
-                              copy[selectedEntIndex].initialMemories[memIdx].intent.type =
-                                e.target.value as "dialogue" | "action" | "monologue";
+                              copy[selectedEntIndex].initialMemories[
+                                memIdx
+                              ].intent.type = e.target.value as
+                                "dialogue" | "action" | "monologue";
                               setEntities(copy);
                             }}
                           >
@@ -329,8 +343,9 @@ export function EntitiesTab({
                             value={mem.locationId || ""}
                             onChange={(e) => {
                               const copy = [...entities];
-                              copy[selectedEntIndex].initialMemories[memIdx].locationId =
-                                e.target.value || null;
+                              copy[selectedEntIndex].initialMemories[
+                                memIdx
+                              ].locationId = e.target.value || null;
                               setEntities(copy);
                             }}
                           >
@@ -389,7 +404,8 @@ export function EntitiesTab({
                           {entityIds
                             .filter((id) => id !== selectedEnt.id)
                             .map((entId) => {
-                              const isSelected = mem.intent.targetIds?.includes(entId);
+                              const isSelected =
+                                mem.intent.targetIds?.includes(entId);
                               return (
                                 <button
                                   key={entId}
@@ -397,13 +413,14 @@ export function EntitiesTab({
                                   onClick={() => {
                                     const copy = [...entities];
                                     const targets =
-                                      copy[selectedEntIndex].initialMemories[memIdx]
-                                        .intent.targetIds || [];
+                                      copy[selectedEntIndex].initialMemories[
+                                        memIdx
+                                      ].intent.targetIds || [];
                                     if (targets.includes(entId)) {
                                       copy[selectedEntIndex].initialMemories[
                                         memIdx
                                       ].intent.targetIds = targets.filter(
-                                        (t) => t !== entId
+                                        (t) => t !== entId,
                                       );
                                     } else {
                                       copy[selectedEntIndex].initialMemories[
@@ -434,8 +451,9 @@ export function EntitiesTab({
                               onCheckedChange={(checked) => {
                                 const copy = [...entities];
                                 if (checked) {
-                                  copy[selectedEntIndex].initialMemories[memIdx].outcome =
-                                    { isValid: true, reason: "" };
+                                  copy[selectedEntIndex].initialMemories[
+                                    memIdx
+                                  ].outcome = { isValid: true, reason: "" };
                                 } else {
                                   copy[selectedEntIndex].initialMemories[
                                     memIdx
@@ -449,14 +467,17 @@ export function EntitiesTab({
                           {mem.outcome && (
                             <div className="grid grid-cols-3 gap-2 bg-secondary/15 p-2 rounded">
                               <div className="col-span-1 flex flex-col justify-center">
-                                <Label className="text-[9px] mb-1">isValid</Label>
+                                <Label className="text-[9px] mb-1">
+                                  isValid
+                                </Label>
                                 <Checkbox
                                   checked={mem.outcome.isValid}
                                   onCheckedChange={(checked) => {
                                     const copy = [...entities];
                                     if (
-                                      copy[selectedEntIndex].initialMemories[memIdx]
-                                        .outcome
+                                      copy[selectedEntIndex].initialMemories[
+                                        memIdx
+                                      ].outcome
                                     ) {
                                       copy[selectedEntIndex].initialMemories[
                                         memIdx
@@ -474,8 +495,9 @@ export function EntitiesTab({
                                   onChange={(e) => {
                                     const copy = [...entities];
                                     if (
-                                      copy[selectedEntIndex].initialMemories[memIdx]
-                                        .outcome
+                                      copy[selectedEntIndex].initialMemories[
+                                        memIdx
+                                      ].outcome
                                     ) {
                                       copy[selectedEntIndex].initialMemories[
                                         memIdx

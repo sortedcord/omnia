@@ -32,7 +32,8 @@ export function LocationsTab({
     copy[locIndex].connections = [
       ...copy[locIndex].connections,
       {
-        targetId: locationIds.filter((id) => id !== locations[locIndex].id)[0] || "",
+        targetId:
+          locationIds.filter((id) => id !== locations[locIndex].id)[0] || "",
         visionProp: 10,
         soundProp: 10,
         bidirectional: true,
@@ -45,7 +46,7 @@ export function LocationsTab({
     locIndex: number,
     connIndex: number,
     key: K,
-    val: ConnectionData[K]
+    val: ConnectionData[K],
   ) => {
     const copy = [...locations];
     copy[locIndex].connections[connIndex] = {
@@ -58,7 +59,7 @@ export function LocationsTab({
   const removeLocationConnection = (locIndex: number, connIndex: number) => {
     const copy = [...locations];
     copy[locIndex].connections = copy[locIndex].connections.filter(
-      (_, i) => i !== connIndex
+      (_, i) => i !== connIndex,
     );
     setLocations(copy);
   };
@@ -181,7 +182,12 @@ export function LocationsTab({
                   const copy = [...locations];
                   copy[selectedLocIndex].attributes = [
                     ...copy[selectedLocIndex].attributes,
-                    { name: "", value: "", visibility: "PUBLIC", allowedEntities: [] },
+                    {
+                      name: "",
+                      value: "",
+                      visibility: "PUBLIC",
+                      allowedEntities: [],
+                    },
                   ];
                   setLocations(copy);
                 }}
@@ -207,7 +213,8 @@ export function LocationsTab({
               </Button>
             </div>
 
-            {!selectedLoc.connections || selectedLoc.connections.length === 0 ? (
+            {!selectedLoc.connections ||
+            selectedLoc.connections.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">
                 No connections leading from this location.
               </p>
@@ -220,7 +227,9 @@ export function LocationsTab({
                   >
                     <button
                       type="button"
-                      onClick={() => removeLocationConnection(selectedLocIndex, connIdx)}
+                      onClick={() =>
+                        removeLocationConnection(selectedLocIndex, connIdx)
+                      }
                       className="absolute top-2 right-2 text-muted-foreground hover:text-destructive cursor-pointer"
                       title="Delete connection"
                     >
@@ -240,7 +249,7 @@ export function LocationsTab({
                               selectedLocIndex,
                               connIdx,
                               "targetId",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                         >
@@ -267,7 +276,7 @@ export function LocationsTab({
                               selectedLocIndex,
                               connIdx,
                               "portalName",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="h-7 text-xs"
@@ -287,7 +296,7 @@ export function LocationsTab({
                             selectedLocIndex,
                             connIdx,
                             "portalStateDescriptor",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="h-7 text-xs"
@@ -309,7 +318,7 @@ export function LocationsTab({
                               selectedLocIndex,
                               connIdx,
                               "visionProp",
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                           className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
@@ -330,7 +339,7 @@ export function LocationsTab({
                               selectedLocIndex,
                               connIdx,
                               "soundProp",
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                           className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
@@ -347,11 +356,12 @@ export function LocationsTab({
                               selectedLocIndex,
                               connIdx,
                               "bidirectional",
-                              !!checked
+                              !!checked,
                             )
                           }
                         />
-                        Bidirectional Connection (creates reverse path automatically)
+                        Bidirectional Connection (creates reverse path
+                        automatically)
                       </Label>
                     </div>
                   </div>

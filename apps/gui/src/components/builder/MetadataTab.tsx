@@ -57,7 +57,7 @@ export function MetadataTab({
               value={scenarioId}
               onChange={(e) =>
                 setScenarioId(
-                  e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "")
+                  e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""),
                 )
               }
               className="font-mono text-xs"

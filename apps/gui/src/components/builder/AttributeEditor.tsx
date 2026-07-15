@@ -25,7 +25,7 @@ export function AttributeEditor({
   const handleAttrChange = <K extends keyof AttributeData>(
     index: number,
     key: K,
-    val: AttributeData[K]
+    val: AttributeData[K],
   ) => {
     const copy = [...attributes];
     copy[index] = { ...copy[index], [key]: val };
@@ -46,7 +46,9 @@ export function AttributeEditor({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center border-b border-border/20 pb-2">
-        <h3 className="text-body-md font-mono text-foreground font-bold">{title}</h3>
+        <h3 className="text-body-md font-mono text-foreground font-bold">
+          {title}
+        </h3>
         <Button
           type="button"
           size="sm"
@@ -58,7 +60,9 @@ export function AttributeEditor({
         </Button>
       </div>
       {attributes.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic">No attributes defined yet.</p>
+        <p className="text-xs text-muted-foreground italic">
+          No attributes defined yet.
+        </p>
       ) : (
         <div className="space-y-3">
           {attributes.map((attr, index) => (
@@ -71,13 +75,17 @@ export function AttributeEditor({
                   <Input
                     placeholder="Name (e.g. role)"
                     value={attr.name}
-                    onChange={(e) => handleAttrChange(index, "name", e.target.value)}
+                    onChange={(e) =>
+                      handleAttrChange(index, "name", e.target.value)
+                    }
                     className="h-8 font-mono text-xs"
                   />
                   <Input
                     placeholder="Value (e.g. merchant)"
                     value={attr.value}
-                    onChange={(e) => handleAttrChange(index, "value", e.target.value)}
+                    onChange={(e) =>
+                      handleAttrChange(index, "value", e.target.value)
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
@@ -86,7 +94,9 @@ export function AttributeEditor({
                   variant="destructive"
                   size="icon"
                   className="size-8 shrink-0 cursor-pointer"
-                  onClick={() => onChange(attributes.filter((_, i) => i !== index))}
+                  onClick={() =>
+                    onChange(attributes.filter((_, i) => i !== index))
+                  }
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -100,7 +110,7 @@ export function AttributeEditor({
                         handleAttrChange(
                           index,
                           "visibility",
-                          checked ? "PUBLIC" : "PRIVATE"
+                          checked ? "PUBLIC" : "PRIVATE",
                         )
                       }
                     />
@@ -119,12 +129,15 @@ export function AttributeEditor({
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {entityIds.map((entId) => {
-                          const isAllowed = attr.allowedEntities?.includes(entId);
+                          const isAllowed =
+                            attr.allowedEntities?.includes(entId);
                           return (
                             <button
                               key={entId}
                               type="button"
-                              onClick={() => handleToggleEntityAccess(index, entId)}
+                              onClick={() =>
+                                handleToggleEntityAccess(index, entId)
+                              }
                               className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${
                                 isAllowed
                                   ? "bg-primary/20 border-primary text-primary font-bold"
