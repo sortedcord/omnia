@@ -49,47 +49,10 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     }
   });
 
-  test("auto-bootstraps all environment-variable providers when database is empty", () => {
+  test("returns empty list when database is empty and no auto-bootstraps", () => {
     process.env.GOOGLE_API_KEY = "mock-google-key";
-    process.env.OPENROUTER_API_KEY = "mock-openrouter-key";
-    process.env.ANTHROPIC_API_KEY = "mock-anthropic-key";
-    process.env.OPENAI_API_KEY = "mock-openai-key";
-    process.env.GROQ_API_KEY = "mock-groq-key";
-    process.env.DEEPSEEK_API_KEY = "mock-deepseek-key";
-
     const list = ProviderManager.list();
-
-    const providers = list.map((p) => p.providerName);
-    expect(providers).toContain("google-genai");
-    expect(providers).toContain("openrouter");
-    expect(providers).toContain("anthropic");
-    expect(providers).toContain("openai");
-    expect(providers).toContain("groq");
-    expect(providers).toContain("deepseek");
-
-    // Gemini should have both generative + embedding (2 entries)
-    const geminiEntries = list.filter((p) => p.providerName === "google-genai");
-    expect(geminiEntries.length).toBe(2);
-    expect(geminiEntries.some((p) => p.type === "generative")).toBe(true);
-    expect(geminiEntries.some((p) => p.type === "embedding")).toBe(true);
-
-    // OpenAI should have both generative + embedding (2 entries)
-    const openaiEntries = list.filter((p) => p.providerName === "openai");
-    expect(openaiEntries.length).toBe(2);
-    expect(openaiEntries.some((p) => p.type === "generative")).toBe(true);
-    expect(openaiEntries.some((p) => p.type === "embedding")).toBe(true);
-
-    // First generative provider inserted should be active
-    const activeGenerative = list.filter(
-      (p) => p.type === "generative" && p.isActive,
-    );
-    expect(activeGenerative.length).toBe(1);
-
-    // First embedding provider inserted should be active
-    const activeEmbedding = list.filter(
-      (p) => p.type === "embedding" && p.isActive,
-    );
-    expect(activeEmbedding.length).toBe(1);
+    expect(list.length).toBe(0);
   });
 
   test("getActive returns null when no providers exist and no env vars", () => {
@@ -99,19 +62,10 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     expect(activeEmbed).toBeNull();
   });
 
-  test("getActive falls back to env var when DB operations fail or return null", () => {
+  test("getActive returns null when DB is empty", () => {
     process.env.GOOGLE_API_KEY = "mock-google-key-123";
-    // DB is empty, getActive should bootstrap and find or create from env
     const active = ProviderManager.getActive("generative");
-    expect(active).not.toBeNull();
-    expect(active?.providerName).toBe("google-genai");
-    expect(active?.apiKey).toBe("mock-google-key-123");
-    expect(active?.type).toBe("generative");
-
-    const activeEmbed = ProviderManager.getActive("embedding");
-    expect(activeEmbed).not.toBeNull();
-    expect(activeEmbed?.providerName).toBe("google-genai");
-    expect(activeEmbed?.type).toBe("embedding");
+    expect(active).toBeNull();
   });
 
   test("getActive returns first instance of type when none is active", () => {
@@ -250,20 +204,25 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     expect(updated?.modelName).toBe("gpt-4o-mini");
     expect(updated?.maxContext).toBe(64000);
   });
-  test("treats bootstrapped instances as normal provider instances (editable and deletable)", () => {
-    process.env.GOOGLE_API_KEY = "mock-google-key-123";
+  test("treats created instances as normal provider instances (editable and deletable)", () => {
+    const inst = ProviderManager.create(
+      "Google Gemini (Env)",
+      "google-genai",
+      "mock-google-key-123",
+      "gemini-2.5-flash",
+      "generative",
+    );
 
-    // Trigger bootstrap
     const list = ProviderManager.list();
-    expect(list.length).toBe(2);
-    const bootstrapped = list.find((p) => p.name === "Google Gemini (Env)");
-    expect(bootstrapped).toBeDefined();
-    if (!bootstrapped) return;
-    expect(bootstrapped.isActive).toBe(true);
+    expect(list.length).toBe(1);
+    const created = list.find((p) => p.id === inst.id);
+    expect(created).toBeDefined();
+    if (!created) return;
+    expect(created.isActive).toBe(true);
 
     // Edit name and key
     ProviderManager.update(
-      bootstrapped.id,
+      created.id,
       "My Gemini Key",
       "google-genai",
       "new-secret-key",
@@ -271,8 +230,8 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     );
 
     const listAfterUpdate = ProviderManager.list();
-    expect(listAfterUpdate.length).toBe(2);
-    const updated = listAfterUpdate.find((p) => p.id === bootstrapped.id);
+    expect(listAfterUpdate.length).toBe(1);
+    const updated = listAfterUpdate.find((p) => p.id === created.id);
     expect(updated).toBeDefined();
     if (!updated) return;
     expect(updated.name).toBe("My Gemini Key");
@@ -280,8 +239,8 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     expect(updated.modelName).toBe("gemini-2.5-pro");
 
     // Delete instance
-    ProviderManager.delete(bootstrapped.id);
+    ProviderManager.delete(created.id);
     const listAfterDelete = ProviderManager.list();
-    expect(listAfterDelete.length).toBe(1);
+    expect(listAfterDelete.length).toBe(0);
   });
 });

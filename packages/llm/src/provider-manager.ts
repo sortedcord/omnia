@@ -1,15 +1,12 @@
 import type { ModelProviderInstance } from "./llm.js";
 import { getDb } from "./db.js";
-import { mapRow, synthInstance, type DbRow } from "./row-mapper.js";
-import { seedFromEnvVars } from "./bootstrap.js";
-import { ProviderRegistry } from "./registry.js";
+import { mapRow, type DbRow } from "./row-mapper.js";
 
 export { setDbPath as setDbPathOverride } from "./db.js";
 
 export class ProviderManager {
   static list(): ModelProviderInstance[] {
     const db = getDb();
-    seedFromEnvVars(db);
     const rows = db
       .prepare("SELECT * FROM provider_instances")
       .all() as DbRow[];
@@ -150,8 +147,6 @@ export class ProviderManager {
   ): ModelProviderInstance | null {
     const db = getDb();
     try {
-      seedFromEnvVars(db);
-
       const row = db
         .prepare(
           "SELECT * FROM provider_instances WHERE isActive = 1 AND type = ?",
@@ -175,7 +170,7 @@ export class ProviderManager {
 
       return null;
     } catch {
-      return envFallback(type);
+      return null;
     }
   }
 
@@ -204,22 +199,4 @@ export class ProviderManager {
       ).run(task, providerInstanceId);
     }
   }
-}
-
-function envFallback(
-  type: "generative" | "embedding",
-): ModelProviderInstance | null {
-  const defs = [...ProviderRegistry.all()].sort(
-    (a, b) => a.fallbackPriority - b.fallbackPriority,
-  );
-  for (const def of defs) {
-    if (!def.envVar) continue;
-    if (type === "generative" && !def.capabilities.generative) continue;
-    if (type === "embedding" && !def.capabilities.embedding) continue;
-    const key = process.env[def.envVar]?.trim();
-    if (key) {
-      return synthInstance(def, type, key);
-    }
-  }
-  return null;
 }

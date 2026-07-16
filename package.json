@@ -19,7 +19,8 @@
     "watch": "tsc -b --watch",
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
-    "test:evals": "vitest run --project evals"
+    "test:evals": "vitest run --project evals",
+    "setup-provider": "node packages/llm/dist/bin/setup-provider.js"
   },
   "keywords": [],
   "author": "sortedcord",

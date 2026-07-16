@@ -141,8 +141,8 @@ Provider metadata is **self-declared** by each provider class in a `static {}` b
 `ProviderManager` is a **static class** that provides full CRUD over provider instances, backed by a SQLite database (`data/settings.db` at the workspace root). Internally split across:
 
 - [`db.ts`](src/db.ts) — memoized DB handle + schema migrations (`PRAGMA user_version`)
-- [`bootstrap.ts`](src/bootstrap.ts) — `seedFromEnvVars()` driven by `PROVIDER_REGISTRY` (one implementation, not duplicated)
-- [`row-mapper.ts`](src/row-mapper.ts) — `mapRow()` + `synthInstance()` (written once, used everywhere)
+- [`bin/setup-provider.ts`](src/bin/setup-provider.ts) — CLI tool to set up provider instances in the database
+- [`row-mapper.ts`](src/row-mapper.ts) — `mapRow()` (written once, used everywhere)
 - [`provider-manager.ts`](src/provider-manager.ts) — thin CRUD: `list`, `create`, `delete`, `setActive`, `update`, `getActive`, `getMappings`, `setMapping`
 
 ### Storage
@@ -190,47 +190,31 @@ CREATE TABLE IF NOT EXISTS provider_mappings (
 - **Auto-promotion on delete** — if the deleted instance was active, the first remaining instance of the same type is promoted.
 - **Auto-activation on create** — if no active instance exists for the type, the new instance is automatically activated.
 
-### Environment Variable Bootstrap
+### Manual Seeding via CLI
 
-On first database access (and if the `provider_instances` table is empty), the manager auto-seeds instances from environment variables:
+Rather than automatically bootstrapping from environment variables at runtime, which adds runtime complexity, you can quickly seed the database using the CLI setup tool:
 
-```mermaid
-flowchart TD
-    A["getSettingsDb() called"] --> B{"DB has 0 rows?"}
-    B -- No --> Z["Return DB"]
-    B -- Yes --> C{"GOOGLE_API_KEY set?"}
-    C -- Yes --> D["Insert 'Gemini (Env)'\ntype: generative, active: true"]
-    D --> E["Insert 'Gemini Embed (Env)'\ntype: embedding, active: true"]
-    E --> F{"OPENROUTER_API_KEY set?"}
-    C -- No --> F
-    F -- Yes --> G["Insert 'OpenRouter (Env)'\ntype: generative\nactive: only if no Google key"]
-    F -- No --> Z
-    G --> Z
+#### Seeding All Environment-Variable Providers
+
+```bash
+pnpm setup-provider --all
 ```
 
-This same bootstrap logic is **duplicated** inside `getActive()` as a safety net — if the DB is empty at query time, it re-attempts the same env-var seeding.
+This command auto-detects and inserts provider instances into `data/settings.db` for any registered providers whose corresponding environment variables (such as `GOOGLE_API_KEY`, `OPENAI_API_KEY`, etc.) are defined.
 
-### Fallback Chain in `getActive()`
+#### Creating a Specific Provider Instance
 
-When no active row is found for the requested type:
-
+```bash
+pnpm setup-provider --provider google-genai --key YOUR_API_KEY [--name "My Gemini"] [--model gemini-2.5-flash] [--type generative] [--max-context 32768] [--endpoint url]
 ```
-1. DB query for isActive=1 AND type=<requested>
-   ├── Found → return it
-   └── Not found
-       ├── DB is empty → bootstrap from env vars → retry query
-       │   ├── Found → return it
-       │   └── Still empty → promote first row of same type
-       │       ├── Found → activate & return
-       │       └── None → return null
-       └── DB has rows but none active for this type
-           → promote first row of same type (same as above)
 
-2. On any DB error (catch block) → direct env var fallback
-   ├── GOOGLE_API_KEY → synthetic "Gemini (Env Fallback)" instance
-   ├── OPENROUTER_API_KEY → synthetic "OpenRouter (Env Fallback)" instance
-   └── Neither → return null
-```
+### Credential Resolution Cascade
+
+When initializing a provider (e.g. `new GeminiProvider()`):
+
+1. **Explicit Credentials** — If `apiKey`, `modelName`, etc. are passed directly to the constructor, they are used.
+2. **Active DB Instance** — If not explicitly passed, it looks up the active DB instance via `ProviderManager.getActive()`. If found and matches the provider, its API key and configuration are used.
+3. **Environment Fallback** — If there is no matching active DB instance, it resolves the key directly from the corresponding environment variable (e.g., `GOOGLE_API_KEY`) via `resolveCredentials`.
 
 ## Available Providers
 
@@ -526,8 +510,9 @@ packages/llm/
 │   ├── provider-factory.ts   # buildLLMProvider() / buildEmbeddingProvider() (registry lookup)
 │   ├── provider-manager.ts   # ProviderManager (thin CRUD)
 │   ├── db.ts                 # Memoized DB handle + migrations
-│   ├── bootstrap.ts          # seedFromEnvVars() (registry-driven)
-│   ├── row-mapper.ts         # mapRow() + synthInstance()
+│   ├── row-mapper.ts         # mapRow()
+│   ├── bin/
+│   │   └── setup-provider.ts # CLI tool to set up provider instances in the database
 │   └── providers/
 │       ├── google-genai.ts   # GeminiProvider + GeminiEmbeddingProvider (self-registering)
 │       ├── ollama.ts         # OllamaProvider + OllamaEmbeddingProvider
@@ -541,6 +526,7 @@ packages/llm/
 │   ├── mock.test.ts
 │   ├── openrouter.test.ts
 │   ├── model-lister.test.ts  # ModelLister cache and fetch logic unit tests
-│   └── provider-manager.test.ts
+│   ├── provider-manager.test.ts
+│   └── cli.test.ts           # Integration tests for setup-provider CLI tool
 └── package.json
 ```

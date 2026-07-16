@@ -15,6 +15,13 @@ export function setDbPath(p: string | null) {
 }
 
 function findDbPath(): string {
+  if (process.env.OMNIA_DB_PATH) {
+    const dir = path.dirname(process.env.OMNIA_DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return process.env.OMNIA_DB_PATH;
+  }
   let current = process.cwd();
   while (current !== "/" && current !== path.parse(current).root) {
     if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) {
