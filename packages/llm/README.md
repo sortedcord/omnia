@@ -450,6 +450,38 @@ The `buildLLMProvider()` and `buildEmbeddingProvider()` functions perform the fi
 | `"deepseek"`      | `DeepSeekProvider`   | _(falls through to mock)_ |
 | _(anything else)_ | `MockLLMProvider`    | `MockEmbeddingProvider`   |
 
+## Model Listing and Discovery
+
+The `ModelLister` class provides a unified interface to dynamically query available models from the remote provider APIs.
+
+### Caching and TTL
+
+All list requests are cached in-memory with a **5-minute TTL** (`300,000ms`) to prevent rapid, repetitive remote API requests and avoid rate limit exhaustion.
+
+- **Cache Key**: Generated using `providerName` combined with either the `apiKey` or `endpointUrl`.
+- **Invalidation**: Call `ModelLister.invalidateCache(providerName, apiKey, endpointUrl)` to clear cache for specific instances, or `ModelLister.clearCache()` to wipe all lists.
+
+### Provider Integration Details
+
+| Provider          | Endpoint                     | Auth Header             | Pagination                  |
+| ----------------- | ---------------------------- | ----------------------- | --------------------------- |
+| **Google Gemini** | `GET /v1beta/models?key=KEY` | Query Param             | ✅ Loop via `nextPageToken` |
+| **OpenAI**        | `GET /v1/models`             | `Authorization: Bearer` | ❌                          |
+| **Anthropic**     | `GET /v1/models`             | `x-api-key`             | ✅ Loop via `after_id`      |
+| **Groq**          | `GET /openai/v1/models`      | `Authorization: Bearer` | ❌                          |
+| **DeepSeek**      | `GET /models`                | `Authorization: Bearer` | ❌                          |
+| **Ollama**        | `GET /api/tags`              | None (Local)            | ❌                          |
+| **OpenRouter**    | `GET /api/v1/models`         | Optional Bearer         | ❌                          |
+| **Mock**          | Instant return (no fetch)    | —                       | —                           |
+
+### Methods
+
+- `listModels(providerName: string, apiKey: string, endpointUrl?: string): Promise<ModelInfo[]>`
+- `invalidateCache(providerName: string, apiKey: string, endpointUrl?: string): void`
+- `clearCache(): void`
+
+---
+
 ## Structured Output
 
 All real providers use LangChain's `.withStructuredOutput(schema, { includeRaw: true })` pattern:
@@ -489,6 +521,7 @@ packages/llm/
 │   ├── index.ts              # Re-exports everything
 │   ├── llm.ts                # Interfaces, types, AVAILABLE_PROVIDERS
 │   ├── config.ts             # Env var parsing (Zod)
+│   ├── model-lister.ts       # ModelLister with cache and API fetching
 │   ├── provider-manager.ts   # ProviderManager (SQLite CRUD)
 │   └── providers/
 │       ├── google-genai.ts   # GeminiProvider + GeminiEmbeddingProvider
@@ -502,6 +535,7 @@ packages/llm/
 ├── tests/
 │   ├── mock.test.ts
 │   ├── openrouter.test.ts
+│   ├── model-lister.test.ts  # ModelLister cache and fetch logic unit tests
 │   └── provider-manager.test.ts
 └── package.json
 ```
