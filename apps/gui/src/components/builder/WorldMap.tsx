@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RotateCcw, Map as MapIcon } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import type { LocationData } from "./types";
 
 interface BoxNode {
@@ -203,7 +203,20 @@ export function WorldMap({
 
   // Connection lines computation
   const connectionLines = useMemo(() => {
-    const lines: any[] = [];
+    const lines: {
+      id: string;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      portalName?: string;
+      portalState?: string;
+      vision?: number;
+      sound?: number;
+      bidirectional?: boolean;
+      sourceId: string;
+      targetId: string;
+    }[] = [];
     const seen = new Set<string>();
 
     locations.forEach((loc) => {

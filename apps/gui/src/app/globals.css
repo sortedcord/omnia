@@ -8,6 +8,7 @@
 @custom-variant data-horizontal (&[data-orientation="horizontal"]);
 @custom-variant data-vertical (&[data-orientation="vertical"]);
 @custom-variant data-popup-open (&[data-state="open"]);
+@custom-variant data-highlighted (&[data-highlighted]);
 
 @theme inline {
   --font-head: var(--font-head);

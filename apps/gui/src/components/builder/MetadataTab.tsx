@@ -24,7 +24,6 @@ interface MetadataTabProps {
 
 export function MetadataTab({
   scenarioId,
-  setScenarioId,
   name,
   setName,
   description,
