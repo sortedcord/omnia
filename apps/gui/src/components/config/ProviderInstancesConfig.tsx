@@ -54,6 +54,16 @@ import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import { RefreshCwIcon } from "lucide-react";
 
+const providerLogoMap: Record<string, string> = {
+  anthropic: "/claude_logo.png",
+  "google-genai": "/gemini_logo.png",
+  openrouter: "/openrouter_logo.png",
+  ollama: "/ollama_logo.png",
+  deepseek: "/deepseek_logo.png",
+  openai: "/openai_logo.png",
+  groq: "/groq_logo.png",
+};
+
 interface ProviderInstancesConfigProps {
   instances: ModelProviderInstance[];
   availableProviders: ModelProviderMeta[];
@@ -337,7 +347,7 @@ export function ProviderInstancesConfig({
   };
 
   return (
-    <section className="mb-8">
+    <section className="mb-8 flex min-h-[600px] flex-col">
       {error && (
         <div className="mb-4 rounded border-2 border-red-500 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -345,7 +355,7 @@ export function ProviderInstancesConfig({
       )}
       <div
         className={cn(
-          "mt-4 grid min-h-[400px] grid-cols-1 gap-4 md:grid-cols-[30%_70%]",
+          "mt-4 grid flex-1 grid-cols-1 gap-4 md:grid-cols-[30%_70%]",
           loading && "pointer-events-none opacity-60",
           "transition-opacity duration-200",
         )}
@@ -379,14 +389,22 @@ export function ProviderInstancesConfig({
                     )}
                     onClick={() => setSelectedInstanceId(inst.id)}
                   >
-                    <ItemContent>
-                      <ItemTitle>{inst.name}</ItemTitle>
-                      <ItemDescription>{inst.providerName}</ItemDescription>
-                      <div className="flex flex-row gap-1.5">
-                        {inst.isActive && <Badge>Active</Badge>}
-                        <Badge variant="outline">
-                          {inst.type === "generative" ? "gen" : "embed"}
-                        </Badge>
+                    <ItemContent className="flex-row items-center gap-3">
+                      {providerLogoMap[inst.providerName] && (
+                        <img
+                          src={providerLogoMap[inst.providerName]}
+                          alt={inst.providerName}
+                          className="max-h-[30px] max-w-[30px] shrink-0 rounded-sm object-contain"
+                        />
+                      )}
+                      <div className="flex flex-col gap-1">
+                        <ItemTitle>{inst.name}</ItemTitle>
+                        <div className="flex flex-row gap-1.5">
+                          {inst.isActive && <Badge>Active</Badge>}
+                          <Badge variant="outline">
+                            {inst.type === "generative" ? "gen" : "embed"}
+                          </Badge>
+                        </div>
                       </div>
                     </ItemContent>
                   </Item>

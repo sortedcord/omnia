@@ -188,7 +188,7 @@ export function HomeView() {
 
   return (
     <div className="flex-1 overflow-y-auto w-full relative">
-      <div className="relative z-10 mx-auto max-w-[800px] px-10 py-12">
+      <div className="relative z-10 mx-auto max-w-[1024px] px-10 py-12">
         <div className="animate-fade-in">
           {/* Centered Big Logo */}
           <div className="flex flex-col items-center justify-center mb-10 pt-4">

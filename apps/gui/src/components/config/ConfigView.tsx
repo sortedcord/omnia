@@ -103,7 +103,7 @@ export function ConfigView() {
 
   return (
     <div className="flex-1 overflow-y-auto w-full relative">
-      <div className="relative z-10 mx-auto max-w-[800px] px-10 py-12">
+      <div className="relative z-10 mx-auto max-w-[1024px] px-10 py-12">
         <h1 className="mb-6 text-headline-lg text-primary animate-fade-in">
           Configuration
         </h1>
