@@ -113,17 +113,17 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
               {chunks.length === 0 ? (
                 <div className="border border-dotted border-border/30 p-8 text-center bg-card text-muted-foreground rounded">
                   <p className="text-sm">
-                    No memories were promoted to the Ledger during this turn.
+                    No memories were promoted to the Memory Ledger during this
+                    turn.
                   </p>
                   <p className="text-xs mt-1">
-                    All working memory buffer entries were summarized or
-                    forgotten.
+                    All Cognitive Buffer entries were summarized or forgotten.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
-                    Ledger Additions
+                    Memory Ledger Additions
                   </h3>
                   {chunks.map((chunk: any, index: number) => (
                     <div

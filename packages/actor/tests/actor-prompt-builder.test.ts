@@ -4,7 +4,7 @@ import { WorldState, Entity } from "@omnia/core";
 import { BufferRepository, LedgerRepository } from "@omnia/memory";
 import { ActorPromptBuilder } from "../src/actor-prompt-builder";
 
-describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
+describe("ActorPromptBuilder with Memory Ledger Integration", () => {
   let db: Database.Database;
   let bufferRepo: BufferRepository;
   let ledgerRepo: LedgerRepository;
@@ -31,7 +31,7 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
     db.close();
   });
 
-  it("should inject both recent memory and recalled long-term memory with subjective aliases resolved", () => {
+  it("should inject both Cognitive Buffer and recalled Memory Ledger entries with subjective aliases resolved", () => {
     const world = new WorldState(
       "world-123",
       new Date("2024-01-10T12:00:00.000Z"),
@@ -60,7 +60,7 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
       },
     });
 
-    // 2. Populate ledger repository (long-term memory)
+    // 2. Populate ledger repository (Memory Ledger)
     ledgerRepo.save({
       id: "ledger1",
       ownerId: "alice",
@@ -76,12 +76,12 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
     const builder = new ActorPromptBuilder(bufferRepo, ledgerRepo, 20, 5);
     const { userContext } = builder.build(world, alice);
 
-    // Check recent memory exists
-    expect(userContext).toContain("=== RECENT EVENTS ===");
+    // Check Cognitive Buffer exists
+    expect(userContext).toContain("=== COGNITIVE BUFFER ===");
     expect(userContext).toContain("Alice greets Bob");
 
-    // Check long-term memory exists
-    expect(userContext).toContain("=== YOUR MEMORIES ===");
+    // Check Memory Ledger exists
+    expect(userContext).toContain("=== MEMORY LEDGER ===");
     // Bob should be resolved to Strider in the ledger content
     expect(userContext).toContain("alice met Strider at the tavern.");
     expect(userContext).toContain('Quote: "I am a ranger."');
@@ -98,7 +98,7 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
     const builder = new ActorPromptBuilder(bufferRepo, ledgerRepo, 20, 5);
     const { userContext } = builder.build(world, alice);
 
-    expect(userContext).toContain("=== RECENT EVENTS ===");
-    expect(userContext).not.toContain("=== YOUR MEMORIES ===");
+    expect(userContext).toContain("=== COGNITIVE BUFFER ===");
+    expect(userContext).not.toContain("=== MEMORY LEDGER ===");
   });
 });

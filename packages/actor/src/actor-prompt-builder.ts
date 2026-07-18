@@ -33,17 +33,17 @@ export type ActorResponse = z.infer<typeof ActorResponseSchema>;
  *
  * The prompt is strictly epistemically bounded: the entity only sees what
  * it is allowed to see (public attributes + private attributes explicitly
- * ACL'd to it), its own recent memory buffer, and the entities co-located
+ * ACL'd to it), its own Cognitive Buffer, and the entities co-located
  * with it. System UUIDs are surfaced as subjective aliases.
  */
 export class ActorPromptBuilder {
   /**
-   * @param bufferRepo  Used to fetch the actor's recent memory. Optional —
+   * @param bufferRepo  Used to fetch the actor's Cognitive Buffer. Optional —
    *                    if absent, the memory section is omitted.
-   * @param ledgerRepo  Used to fetch long-term memories. Optional.
-   * @param memoryLimit Maximum number of recent buffer entries to inject.
+   * @param ledgerRepo  Used to fetch Memory Ledger entries. Optional.
+   * @param memoryLimit Maximum number of recent Cognitive Buffer entries to inject.
    *                    Defaults to 20.
-   * @param ledgerLimit Maximum number of long-term memories to retrieve.
+   * @param ledgerLimit Maximum number of Memory Ledger entries to retrieve.
    *                    Defaults to 5.
    */
   constructor(
@@ -111,13 +111,13 @@ Guidelines:
       }
     }
 
-    // --- Recent memory ---
+    // --- Cognitive Buffer ---
     const memorySection = this.buildMemorySection(entity, recentEntries, now);
     if (memorySection) {
       sections.push(memorySection);
     }
 
-    // --- Recalled Long-Term memory ---
+    // --- Recalled Memory Ledger ---
     const ledgerSection = this.buildLedgerSection(
       worldState,
       entity,
@@ -139,7 +139,7 @@ Guidelines:
     if (!this.bufferRepo) return null;
 
     if (entries.length === 0) {
-      return `=== RECENT EVENTS ===\n(No recent events recorded.)`;
+      return `=== COGNITIVE BUFFER ===\n(No recent events recorded.)`;
     }
 
     const recent = entries.slice(-this.memoryLimit);
@@ -159,7 +159,7 @@ Guidelines:
       groupedLines.push(`  - ${serialized}`);
     }
 
-    return `=== RECENT EVENTS ===\n${groupedLines.join("\n")}`;
+    return `=== COGNITIVE BUFFER ===\n${groupedLines.join("\n")}`;
   }
 
   private buildLedgerSection(
@@ -263,6 +263,6 @@ Guidelines:
       }
     }
 
-    return `=== YOUR MEMORIES ===\n${groupedLines.join("\n")}`;
+    return `=== MEMORY LEDGER ===\n${groupedLines.join("\n")}`;
   }
 }

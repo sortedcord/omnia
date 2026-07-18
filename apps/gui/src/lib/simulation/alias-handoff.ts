@@ -3,7 +3,7 @@ import type { SimSession } from "./types";
 
 /**
  * Runs the HandoffEngine for every agent entity that has accumulated enough
- * buffer entries to warrant a handoff (compression to long-term memory).
+ * buffer entries to warrant a handoff (compression to the Memory Ledger).
  */
 export async function runHandoffResolution(session: SimSession): Promise<void> {
   const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
@@ -49,7 +49,7 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
           turn: session.turn,
           entityId: entity.id,
           entityName,
-          narrativeProse: `Handoff triggered for ${entityName}: memories were transferred from Buffer to Memory Ledger`,
+          narrativeProse: `Handoff triggered for ${entityName}: memories were transferred from Cognitive Buffer to Memory Ledger`,
           intents: [],
           timestamp: worldState.clock.get().toISOString(),
           isHandoff: true,

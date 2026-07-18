@@ -33,7 +33,7 @@ export function getMemorySectionLength(
   now: Date,
 ): number {
   if (entries.length === 0) {
-    return `=== RECENT EVENTS ===\n(No recent events recorded.)`.length;
+    return `=== COGNITIVE BUFFER ===\n(No recent events recorded.)`.length;
   }
 
   const groupedLines: string[] = [];
@@ -52,7 +52,7 @@ export function getMemorySectionLength(
     groupedLines.push(`  - ${serialized}`);
   }
 
-  return `=== RECENT EVENTS ===\n${groupedLines.join("\n")}`.length;
+  return `=== COGNITIVE BUFFER ===\n${groupedLines.join("\n")}`.length;
 }
 
 function checkSceneExit(entity: Entity, bufferEntries: BufferEntry[]): boolean {
@@ -227,7 +227,7 @@ export class HandoffEngine {
       .join("\n---\n");
 
     const systemPrompt = `
-You are the memory Handoff Engine. Your task is to process a list of recent working memory buffer entries for an entity and select which memories to promote to the long-term Ledger, and which to forget or summarize.
+You are the memory Handoff Engine. Your task is to process a list of Cognitive Buffer entries for an entity and select which memories to promote to the Memory Ledger, and which to forget or summarize.
 
 Instructions:
 1. **Cluster** related consecutive buffer entries into high-level narrative beats or events (e.g. physical action and its outcome or trivial actions). Combine them into a single chunk.
@@ -237,7 +237,7 @@ Instructions:
 4. **Determine Importance**: Assign an importance score from 1 (trivial, e.g. waking up) to 10 (life-altering, e.g. witnessing a crime).
 4. Discard small body movements like looking around, sighing, etc that do not contextually hold any meaning after it is done.
 5. **Involved Entities**: Identify all entity IDs involved in the memories in this chunk.
-6. **Retain in Buffer (Pinning)**: If a beat represents an unresolved high-stakes situation (e.g. a standing threat, an unanswered accusation, an ongoing chase or conflict), set "retainInBuffer" to true so it remains in the working memory buffer for immediate context. Otherwise, set it to false so it is safely pruned from the buffer.
+6. **Retain in Cognitive Buffer (Pinning)**: If a beat represents an unresolved high-stakes situation (e.g. a standing threat, an unanswered accusation, an ongoing chase or conflict), set "retainInBuffer" to true so it remains in the Cognitive Buffer for immediate context. Otherwise, set it to false so it is safely pruned from the Cognitive Buffer.
 7. **Exclude stage business**: Glances, sighs, ambient noticing, and irrelevant sensory details should be ignored and not included in any promoted chunk. They will be forgotten.
 8. **Forget by omission**: Any buffer entry ID that you do not include in any chunk's "sourceEntryIds" will be permanently deleted and forgotten.
 `.trim();

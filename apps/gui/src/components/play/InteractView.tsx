@@ -167,7 +167,8 @@ export function InteractView({
                       Handoff triggered for {entry.entityName}
                     </AlertTitle>
                     <AlertDescription>
-                      Memories were transferred from Buffer to Memory Ledger
+                      Memories were transferred from Cognitive Buffer to Memory
+                      Ledger
                     </AlertDescription>
                   </div>
                   <AlertAction>

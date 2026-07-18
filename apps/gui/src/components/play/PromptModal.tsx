@@ -30,8 +30,8 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
     userContext: string,
     inputTokens: number,
   ) => {
-    const recentHeader = "=== RECENT EVENTS ===";
-    const ledgerHeader = "=== YOUR MEMORIES ===";
+    const recentHeader = "=== COGNITIVE BUFFER ===";
+    const ledgerHeader = "=== MEMORY LEDGER ===";
 
     const recentIdx = userContext.indexOf(recentHeader);
     let worldStr = userContext;
@@ -54,14 +54,14 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
       { label: "System Prompt", type: "system", content: systemPrompt },
       { label: "World Info", type: "world", content: worldStr },
       {
-        label: "Recent Events",
+        label: "Cognitive Buffer",
         type: "events",
-        content: recentStr || "(No recent events.)",
+        content: recentStr || "(No cognitive buffer entries.)",
       },
       {
-        label: "Long-Term Memories",
+        label: "Memory Ledger",
         type: "memories",
-        content: ledgerStr || "(No long-term memories.)",
+        content: ledgerStr || "(No memory buffer entries.)",
       },
     ];
 
