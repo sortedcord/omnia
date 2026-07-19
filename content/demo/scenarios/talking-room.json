@@ -88,7 +88,7 @@
           "locationId": "white-room",
           "intent": {
             "type": "action",
-            "content": "entity@bf3f29d2-cf11-4b11-9a99-b13c126d400e[I] wake up from my sleep.",
+            "content": "entity@bf3f29d2-cf11-4b11-9a99-b13c126d400e wakes up from his sleep.",
             "actorId": "bf3f29d2-cf11-4b11-9a99-b13c126d400e",
             "targetIds": []
           }

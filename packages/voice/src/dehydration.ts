@@ -14,13 +14,12 @@ export function splitQuotes(text: string): Segment[] {
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    if ((char === '"' || char === "'") && (!inQuote || char === quoteChar)) {
+    if (char === '"') {
       if (current) {
         segments.push({ text: current, isQuote: inQuote });
         current = "";
       }
       inQuote = !inQuote;
-      quoteChar = inQuote ? char : "";
     } else {
       current += char;
     }

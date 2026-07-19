@@ -1,6 +1,6 @@
 import { WorldState, resolveAlias } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
-import { dehydrate } from "@omnia/voice";
+import { dehydrate, expandContractions } from "@omnia/voice";
 import { Intent, IntentSequence, LLMIntentSequenceSchema } from "./intent.js";
 
 export class IntentDecoder {
@@ -21,6 +21,7 @@ export class IntentDecoder {
     narrativeProse: string,
     recentIntents: Intent[] = [],
   ): Promise<IntentSequence> {
+    const processedProse = expandContractions(narrativeProse);
     const actor = worldState.getEntity(actorId);
 
     // 1. Get other entities co-located in the same context
@@ -75,6 +76,8 @@ For each intent you must:
 2. Extract the original narrative text fragment from the prose that corresponds to this intent and populate it as "content". Do not paraphrase, do not convert to third person, and do not convert to second person. Keep the original text fragment exactly as written in the prose (first-person voice).
 3. Identify targetIds — the entity IDs of the receiving parties. Use the "Other entities in context" list to resolve any subjective names, aliases, or descriptions used in the prose to their correct entity IDs. If no specific target, use an empty array.
 4. Identify modifiers — a list of strings representing additional qualities or modifiers extracted from the narrative prose. This includes emotions, tone of voice, speed, manner of action, or statement type (e.g., "question", "anxious", "whispering", "slowly", "quietly", "forcefully"). If no modifiers are present, use an empty array.
+5. For dialogue intents always use the following format for content field:
+    I say "<dialogue>" (optionally: to him/her/alias).
 `.trim();
 
     const userContext = `
@@ -85,7 +88,7 @@ Historical Context:
 ${historicalContext}
 
 === NARRATIVE PROSE ===
-${narrativeProse}
+${processedProse}
 `.trim();
 
     const response = await this.llmProvider.generateStructuredResponse({
