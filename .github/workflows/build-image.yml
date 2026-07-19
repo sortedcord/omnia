@@ -4,8 +4,20 @@ on:
   push:
     branches: [master]
     tags: ["v*"]
+    paths-ignore:
+      - 'web/docs/**'
+      - 'web/landing/**'
+      - 'content/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - '.github/workflows/deploy-docs.yml'
   pull_request:
     branches: [master]
+    paths-ignore:
+      - 'web/docs/**'
+      - 'web/landing/**'
+      - 'content/**'
+      - '*.md'
   workflow_dispatch:
 
 jobs:

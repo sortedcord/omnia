@@ -28,9 +28,13 @@ COPY packages/spatial/package.json packages/spatial/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
-FROM build-deps AS builder
-COPY . .
+FROM build-deps AS pkg-builder
+COPY packages/ ./packages/
 RUN pnpm build
+
+FROM pkg-builder AS gui-builder
+COPY apps/gui/src ./apps/gui/src
+COPY apps/gui/public ./apps/gui/public
 RUN pnpm --filter @omnia/gui build
 
 FROM base AS runner
@@ -40,15 +44,15 @@ RUN apt-get update -qq && \
     python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/gui/package.json \
+COPY --from=gui-builder /app/package.json /app/pnpm-workspace.yaml ./
+COPY --from=gui-builder /app/node_modules ./node_modules
+COPY --from=gui-builder /app/packages ./packages
+COPY --from=gui-builder /app/apps/gui/package.json \
     /app/apps/gui/next.config.ts \
     /app/apps/gui/postcss.config.mjs \
     ./apps/gui/
-COPY --from=builder /app/apps/gui/.next ./apps/gui/.next
-COPY --from=builder /app/apps/gui/public ./apps/gui/public
+COPY --from=gui-builder /app/apps/gui/.next ./apps/gui/.next
+COPY --from=gui-builder /app/apps/gui/public ./apps/gui/public
 
 WORKDIR /app/apps/gui
 EXPOSE 3000
