@@ -78,7 +78,7 @@ describe("ActorPromptBuilder with Memory Ledger Integration", () => {
 
     // Check Cognitive Buffer exists
     expect(userContext).toContain("=== COGNITIVE BUFFER ===");
-    expect(userContext).toContain("Alice greets Bob");
+    expect(userContext).toContain("You said: Alice greets Bob");
 
     // Check Memory Ledger exists
     expect(userContext).toContain("=== MEMORY LEDGER ===");

@@ -26,10 +26,11 @@ export class TimeDeltaGenerator implements IDeltaGenerator<TimeDelta> {
         explanation: "Dialogue action; 1 minute granted for quick exchange.",
       };
     }
-    if (intent.type === "monologue") {
+    if (intent.type === "monologue" || intent.type === "thought") {
       return {
         minutesToAdvance: 0,
-        explanation: "Monologue action; no time advanced for internal thought.",
+        explanation:
+          "Monologue/thought action; no time advanced for internal thought.",
       };
     }
 

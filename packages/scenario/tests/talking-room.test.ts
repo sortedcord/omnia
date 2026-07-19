@@ -128,17 +128,22 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
 
     // 7. Assert initial pre-seeded memories
     const alphaMemories = bufferRepo.listForOwner(alphaId);
-    expect(alphaMemories).toHaveLength(1);
-    expect(alphaMemories[0].id).toBe("alpha-wake");
+    expect(alphaMemories).toHaveLength(2);
+    expect(alphaMemories[0].id).toBe("ab3f29d2-cf11-4111-9a99-b13c126d123e");
     expect(alphaMemories[0].intent.type).toBe("monologue");
     expect(alphaMemories[0].intent.originalText).toContain("jail");
     expect(alphaMemories[0].intent.description).toBe("");
 
+    expect(alphaMemories[1].id).toBe("zz3f29d2-as11-9811-9a99-b13c126d123e");
+    expect(alphaMemories[1].intent.type).toBe("action");
+    expect(alphaMemories[1].intent.originalText).toContain("sleep");
+    expect(alphaMemories[1].intent.description).toBe("");
+
     const betaMemories = bufferRepo.listForOwner(betaId);
     expect(betaMemories).toHaveLength(1);
-    expect(betaMemories[0].id).toBe("beta-wake");
+    expect(betaMemories[0].id).toBe("zx1f29d2-cf11-4111-9a99-b13c126d123e");
     expect(betaMemories[0].intent.type).toBe("action");
-    expect(betaMemories[0].intent.originalText).toContain("agreement");
+    expect(betaMemories[0].intent.originalText).toContain("unfamiliar");
     expect(betaMemories[0].intent.description).toBe("");
 
     db.close();

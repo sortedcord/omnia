@@ -41,7 +41,7 @@ For each intent you must:
 1. Classify its type:
    - "dialogue": if actor speaking, talking, whispering, murmuring, etc
    - "action": Any physical or logical action performed in the world (e.g., moving, opening, looking).
-   - "monologue": An inner thought, reflection, or internal monologue/self narration.
+   - "monologue" (or "thought"): An inner thought, reflection, or internal monologue/self narration.
 2. Extract the original text fragment from the prose that corresponds to this intent.
 3. Populate "description" and "selfDescription":
    - "description": No subject or name — a bare third-person verb phrase only (e.g. "clears their throat", "shakes their head slowly")

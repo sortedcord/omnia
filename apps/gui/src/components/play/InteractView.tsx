@@ -23,6 +23,7 @@ function IntentTag({
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
+    thought: "thought",
     dialogue: "dialogue",
     action: "action",
   };

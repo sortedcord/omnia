@@ -16,7 +16,7 @@ export class LLMValidator {
   /**
    * Validates an action intent against the objective world state.
    *
-   * "monologue" intents must never reach this validator — they are internal
+   * "monologue" and "thought" intents must never reach this validator — they are internal
    * thoughts that bypass validation entirely (see Architect.processIntent).
    * This guard exists as a defensive safeguard.
    */
@@ -24,12 +24,12 @@ export class LLMValidator {
     worldState: WorldState,
     intent: Intent,
   ): Promise<ValidationResult> {
-    // Defensive guard: monologue intents bypass validation.
-    if (intent.type === "monologue") {
+    // Defensive guard: monologue and thought intents bypass validation.
+    if (intent.type === "monologue" || intent.type === "thought") {
       return {
         isValid: true,
         reason:
-          "Monologue intents are internal thoughts and bypass validation.",
+          "Monologue/thought intents are internal thoughts and bypass validation.",
       };
     }
 

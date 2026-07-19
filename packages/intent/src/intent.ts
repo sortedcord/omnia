@@ -7,8 +7,14 @@ import { z } from "zod";
  * - "monologue": An inner thought or internal monologue. Not perceivable by
  *   any other entity. Bypasses the Architect/validators entirely and is
  *   written directly to the actor's Cognitive Buffer with no outcome.
+ * - "thought": Equivalent/alias to "monologue".
  */
-export const IntentTypeSchema = z.enum(["dialogue", "action", "monologue"]);
+export const IntentTypeSchema = z.enum([
+  "dialogue",
+  "action",
+  "monologue",
+  "thought",
+]);
 export type IntentType = z.infer<typeof IntentTypeSchema>;
 
 /**
@@ -30,7 +36,7 @@ export const LLMIntentSchema = z.object({
   /**
    * Entity IDs of the receiving parties (e.g., who is being spoken to,
    * what object is being interacted with). Always an empty array for
-   * "monologue" intents, since they are not perceivable by anyone.
+   * "monologue" and "thought" intents, since they are not perceivable by anyone.
    */
   targetIds: z.array(z.string()),
 

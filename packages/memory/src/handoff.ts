@@ -85,7 +85,9 @@ function checkIdleDecay(bufferEntries: BufferEntry[]): boolean {
 
   // Check the last N entries
   const lastN = bufferEntries.slice(-N);
-  return lastN.every((e) => e.intent.type === "monologue");
+  return lastN.every(
+    (e) => e.intent.type === "monologue" || e.intent.type === "thought",
+  );
 }
 
 function checkAttributeTrigger(entity: Entity): boolean {

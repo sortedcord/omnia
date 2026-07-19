@@ -112,7 +112,11 @@ Guidelines:
     }
 
     // --- Cognitive Buffer ---
-    const memorySection = this.buildMemorySection(entity, recentEntries, now);
+    const memorySection = this.buildCognitiveBufferSection(
+      entity,
+      recentEntries,
+      now,
+    );
     if (memorySection) {
       sections.push(memorySection);
     }
@@ -131,7 +135,7 @@ Guidelines:
     return sections.join("\n\n");
   }
 
-  private buildMemorySection(
+  private buildCognitiveBufferSection(
     entity: Entity,
     entries: BufferEntry[],
     now: Date,
@@ -147,8 +151,15 @@ Guidelines:
     let currentGroup: string | null = null;
 
     for (const entry of recent) {
-      const serialized = serializeSubjectiveBufferEntry(entry, entity);
+      let serialized = serializeSubjectiveBufferEntry(entry, entity);
       const when = naturalizeTime(now, new Date(entry.timestamp));
+
+      if (
+        entry.intent.actorId === entity.id &&
+        entry.intent.type === "dialogue"
+      ) {
+        serialized = `You said: ${serialized}`;
+      }
 
       if (when !== currentGroup) {
         currentGroup = when;
