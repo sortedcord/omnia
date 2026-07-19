@@ -8,6 +8,18 @@ export interface IntentInfo {
   minutesToAdvance?: number;
 }
 
+export interface PromptComponent {
+  label: string;
+  type: "system" | "world" | "events" | "memories" | "input" | "other";
+  content: string;
+}
+
+export interface PromptBreakdown {
+  systemPrompt: string;
+  userContext: string;
+  components?: PromptComponent[];
+}
+
 export interface LogEntry {
   turn: number;
   entityId: string;
@@ -17,15 +29,7 @@ export interface LogEntry {
   timestamp: string;
   isHandoff?: boolean;
   handoffResult?: any;
-  rawPrompt?: {
-    systemPrompt: string;
-    userContext: string;
-    sections?: {
-      worldInfo: string;
-      memoryLedger: string;
-      cognitiveBuffer: string;
-    };
-  };
+  rawPrompt?: PromptBreakdown;
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -34,10 +38,7 @@ export interface LogEntry {
     providerInstanceName?: string;
     maxContext?: number;
   };
-  decoderPrompt?: {
-    systemPrompt: string;
-    userContext: string;
-  };
+  decoderPrompt?: PromptBreakdown;
   decoderUsage?: {
     inputTokens: number;
     outputTokens: number;

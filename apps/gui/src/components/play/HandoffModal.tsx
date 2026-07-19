@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { PromptAnalyzer } from "@/components/play/PromptAnalyzer";
 
 interface HandoffModalProps {
   entry: SimSnapshot["log"][number];
@@ -191,25 +192,40 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
           )}
 
           {activeTab === "prompt" && entry.rawPrompt && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono mb-2">
-                  System Prompt
-                </h4>
-                <pre className="p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border max-h-[250px] overflow-y-auto">
-                  {entry.rawPrompt.systemPrompt}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono mb-2">
-                  User Context (Candidates)
-                </h4>
-                <pre className="p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border max-h-[350px] overflow-y-auto font-sans leading-relaxed font-mono">
-                  {entry.rawPrompt.userContext}
-                </pre>
-              </div>
-            </div>
+            <PromptAnalyzer
+              components={
+                entry.rawPrompt.components &&
+                entry.rawPrompt.components.length > 0
+                  ? entry.rawPrompt.components
+                  : [
+                      {
+                        label: "System Prompt",
+                        type: "system",
+                        content: entry.rawPrompt.systemPrompt || "",
+                      },
+                      {
+                        label: "User Context",
+                        type: "world",
+                        content: entry.rawPrompt.userContext || "",
+                      },
+                    ]
+              }
+              inputTokens={entry.usage?.inputTokens || 0}
+              maxContext={
+                entry.usage?.maxContext !== undefined
+                  ? entry.usage.maxContext
+                  : 32768
+              }
+              modelName={entry.usage?.modelName}
+              providerInstanceName={entry.usage?.providerInstanceName}
+              outputLabel="LLM Output (Promoted Memory Chunks)"
+              outputText={
+                handoffResult
+                  ? JSON.stringify(handoffResult, null, 2)
+                  : undefined
+              }
+              outputTokens={entry.usage?.outputTokens}
+            />
           )}
 
           {activeTab === "output" && (

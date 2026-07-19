@@ -2,6 +2,7 @@ import { Entity, WorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 import { BufferEntry, BufferRepository, LedgerRepository } from "@omnia/memory";
 import { Intent, IntentDecoder, IntentSequence } from "@omnia/intent";
+import { PromptComponent } from "@omnia/voice";
 import {
   ActorPromptBuilder,
   ActorResponseSchema,
@@ -56,11 +57,7 @@ export interface ActorTurnResult {
   intents: IntentSequence;
   systemPrompt?: string;
   userContext?: string;
-  promptComponents?: {
-    worldInfo: string;
-    memoryLedger: string;
-    cognitiveBuffer: string;
-  };
+  promptComponents?: PromptComponent[];
 }
 
 /**
@@ -123,7 +120,7 @@ export class ActorAgent {
       );
     }
 
-    const { systemPrompt, userContext, sections } = this.promptBuilder.build(
+    const { systemPrompt, userContext, components } = this.promptBuilder.build(
       worldState,
       entity,
     );
@@ -154,7 +151,7 @@ export class ActorAgent {
       intents,
       systemPrompt,
       userContext,
-      promptComponents: sections,
+      promptComponents: components,
     };
   }
 }

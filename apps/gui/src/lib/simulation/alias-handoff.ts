@@ -45,6 +45,39 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
           ];
         const info = session.entities.find((e) => e.id === entity.id);
         const entityName = info?.name || entity.id;
+        let handoffPrompt = undefined;
+        if (lastCall) {
+          const header = "Cognitive Buffer Candidates for Handoff:";
+          const userContext = lastCall.userContext;
+          const idx = userContext.indexOf(header);
+
+          let contextStr = userContext;
+          let candidatesStr = "";
+
+          if (idx !== -1) {
+            contextStr = userContext.substring(0, idx).trim();
+            candidatesStr = userContext.substring(idx).trim();
+          }
+
+          handoffPrompt = {
+            systemPrompt: lastCall.systemPrompt,
+            userContext: lastCall.userContext,
+            components: [
+              {
+                label: "System Prompt",
+                type: "system",
+                content: lastCall.systemPrompt,
+              },
+              { label: "Entity Context", type: "world", content: contextStr },
+              {
+                label: "Cognitive Candidates",
+                type: "input",
+                content: candidatesStr,
+              },
+            ],
+          };
+        }
+
         session.log.push({
           turn: session.turn,
           entityId: entity.id,
@@ -53,12 +86,7 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
           intents: [],
           timestamp: worldState.clock.get().toISOString(),
           isHandoff: true,
-          rawPrompt: lastCall
-            ? {
-                systemPrompt: lastCall.systemPrompt,
-                userContext: lastCall.userContext,
-              }
-            : undefined,
+          rawPrompt: handoffPrompt,
           usage: lastCall?.usage,
           handoffResult: lastCall?.response,
         });

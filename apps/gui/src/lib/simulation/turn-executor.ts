@@ -191,9 +191,30 @@ export async function processNpcTurn(
       session.decoderProvider.lastCalls[
         session.decoderProvider.lastCalls.length - 1
       ];
+    const proseHeader = "=== NARRATIVE PROSE ===";
+    const userContext = decoderCall.userContext;
+    const idx = userContext.indexOf(proseHeader);
+
+    let contextStr = userContext;
+    let proseStr = "";
+
+    if (idx !== -1) {
+      contextStr = userContext.substring(0, idx).trim();
+      proseStr = userContext.substring(idx).trim();
+    }
+
     entry.decoderPrompt = {
       systemPrompt: decoderCall.systemPrompt,
       userContext: decoderCall.userContext,
+      components: [
+        {
+          label: "System Prompt",
+          type: "system",
+          content: decoderCall.systemPrompt,
+        },
+        { label: "Decoder Context", type: "world", content: contextStr },
+        { label: "Narrative Prose", type: "input", content: proseStr },
+      ],
     };
     entry.decoderUsage = decoderCall.usage;
   }

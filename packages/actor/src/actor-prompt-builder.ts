@@ -13,7 +13,7 @@ import {
   LedgerEntry,
   LedgerRepository,
 } from "@omnia/memory";
-import { hydrate } from "@omnia/voice";
+import { hydrate, PromptComponent } from "@omnia/voice";
 
 /**
  * Zod schema for the structured response expected from the actor LLM.
@@ -60,21 +60,24 @@ export class ActorPromptBuilder {
   /**
    * Assembles the system prompt and user context for a given entity.
    */
+  /**
+   * Assembles the system prompt and user context for a given entity.
+   */
   build(
     worldState: WorldState,
     entity: Entity,
   ): {
     systemPrompt: string;
     userContext: string;
-    sections: {
-      worldInfo: string;
-      memoryLedger: string;
-      cognitiveBuffer: string;
-    };
+    components: PromptComponent[];
   } {
     const systemPrompt = this.buildSystemPrompt();
-    const { userContext, sections } = this.buildUserContext(worldState, entity);
-    return { systemPrompt, userContext, sections };
+    const { userContext, components } = this.buildUserContext(
+      worldState,
+      entity,
+      systemPrompt,
+    );
+    return { systemPrompt, userContext, components };
   }
 
   private buildSystemPrompt(): string {
@@ -103,13 +106,10 @@ Guidelines:
   private buildUserContext(
     worldState: WorldState,
     entity: Entity,
+    systemPrompt: string,
   ): {
     userContext: string;
-    sections: {
-      worldInfo: string;
-      memoryLedger: string;
-      cognitiveBuffer: string;
-    };
+    components: PromptComponent[];
   } {
     const now = worldState.clock.get();
 
@@ -151,13 +151,28 @@ Guidelines:
     if (cognitiveBuffer) parts.push(cognitiveBuffer);
     const userContext = parts.join("\n\n");
 
+    const components: PromptComponent[] = [
+      { label: "System Prompt", type: "system", content: systemPrompt },
+      { label: "World Info", type: "world", content: worldInfo },
+    ];
+    if (memoryLedger) {
+      components.push({
+        label: "Memory Ledger",
+        type: "memories",
+        content: memoryLedger,
+      });
+    }
+    if (cognitiveBuffer) {
+      components.push({
+        label: "Cognitive Buffer",
+        type: "events",
+        content: cognitiveBuffer,
+      });
+    }
+
     return {
       userContext,
-      sections: {
-        worldInfo,
-        memoryLedger,
-        cognitiveBuffer,
-      },
+      components,
     };
   }
 
