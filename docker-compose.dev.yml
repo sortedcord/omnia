@@ -1,0 +1,23 @@
+services:
+  omnia-gui:
+    build:
+      context: .
+      dockerfile: apps/gui/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true # Useful for certain Linux/LXC filesystem event syncing issues
+      - CHOKIDAR_USEPOLLING=true # Ensures file changes trigger HMR properly through bind mounts
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+    volumes:
+      # Mount the entire monorepo code live into the container
+      - .:/app
+      # Anonymous volumes to prevent local node_modules / build caches from overwriting container binaries
+      - /app/node_modules
+      - /app/apps/gui/node_modules
+      - /app/apps/gui/.next
+      - omnia-data:/app/apps/gui/data
+
+volumes:
+  omnia-data:

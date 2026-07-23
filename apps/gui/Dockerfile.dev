@@ -1,0 +1,18 @@
+FROM node:22-slim
+ENV PNPM_HOME="/pnpm" \
+    PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.15.1 --activate
+
+WORKDIR /app
+
+# Install native build tools if required by dependencies
+RUN apt-get update -qq && \
+    apt-get install -qq -y --no-install-recommends \
+    python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# Expose the development port and HMR port if needed
+EXPOSE 3000
+
+# We run a shell command or script to handle mounting sync + pnpm install fallback
+CMD ["pnpm", "--filter", "@omnia/gui", "dev", "--turbopack"]
