@@ -1,12 +1,6 @@
-/**
- * Barrel entry point for the simulation module.
- *
- * Consumers import from "@/lib/simulation" exactly as before — no import
- * paths need to change anywhere in the codebase.
- */
-import { SimulationManager } from "./simulation-manager";
+import { RuntimeService } from "@omnia/runtime";
 
-export const simulationManager = new SimulationManager();
+export const simulationManager = new RuntimeService();
 
 export type {
   SimSnapshot,
@@ -14,4 +8,4 @@ export type {
   LogEntry,
   IntentInfo,
   WaitingContext,
-} from "../simulation-types";
+} from "@omnia/runtime";

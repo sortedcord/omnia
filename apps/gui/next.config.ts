@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "@omnia/memory",
     "@omnia/spatial",
     "@omnia/scenario",
+    "@omnia/runtime",
   ],
   serverExternalPackages: ["better-sqlite3"],
   allowedDevOrigins: ["192.168.0.18", "localhost", "127.0.0.1"],
