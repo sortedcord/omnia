@@ -108,7 +108,7 @@ export function ConfigView() {
           Configuration
         </h1>
         <h2 className="mb-3 text-headline-md text-foreground">
-          Manage Model Instances
+          Manage Model Providers
         </h2>
         {config === null && loading && (
           <p className="text-body-md text-muted-foreground">

@@ -1,0 +1,33 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist"
+    },
+    "include": [
+        "src"
+    ],
+    "references": [
+        {
+            "path": "../actor"
+        },
+        {
+            "path": "../architect"
+        },
+        {
+            "path": "../core"
+        },
+        {
+            "path": "../llm"
+        },
+        {
+            "path": "../memory"
+        },
+        {
+            "path": "../scenario"
+        },
+        {
+            "path": "../voice"
+        }
+    ]
+}
