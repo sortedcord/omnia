@@ -60,8 +60,7 @@ Monologue (`"monologue"`) is the third intent type. Its properties:
   │      → system prompt + user context (subjective world + memory + time)
   │
   ├─ 2. IActorProseGenerator.generate(entityId, systemPrompt, userContext)
-  │      ├─ LLMActorProseGenerator: queries LLM via generateStructuredResponse
-  │      └─ CLIProseGenerator: prompts human player via CLI / readline interface
+  │      └─ LLMActorProseGenerator: queries LLM via generateStructuredResponse
   │      → narrativeProse: string
   │
   ├─ 3. IntentDecoder.decode(worldState, actorId, prose)
@@ -69,7 +68,7 @@ Monologue (`"monologue"`) is the third intent type. Its properties:
   │
   └─ returns { narrativeProse, intents }
 
-[Caller (e.g. game loop)]
+[Runtime turn executor]
   │
   ├─ for each intent in intents:
   │   ├─ if intent.type === "monologue": short-circuit, write to buffer
@@ -78,6 +77,11 @@ Monologue (`"monologue"`) is the third intent type. Its properties:
   │
   └─ world state persisted to DB
 ```
+
+Human-controlled turns bypass NPC prose generation. `@omnia/runtime` prepares
+a waiting-player snapshot, the GUI collects prose, and
+`RuntimeService.submitPlayerAction()` sends it through intent decoding and turn
+execution.
 
 ## Key Files
 

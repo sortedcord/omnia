@@ -61,31 +61,73 @@ The general principle: **anything that must remain true is state; the model only
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v20+ recommended)
-- [pnpm](https://pnpm.io/) (v9+ recommended)
+- [Node.js](https://nodejs.org/) (v22.13 or newer recommended)
+- [pnpm](https://pnpm.io/) (v11.15.1)
 - An API key for Google Gemini (`GOOGLE_API_KEY` environment variable), or configured settings via the GUI.
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/sortedcord/omnia-consolidated.git
-   cd omnia-consolidated
+  git clone https://github.com/sortedcord/omnia.git
+  cd omnia
    ```
-2. Install dependencies:
+2. Install dependencies and compile the workspace packages:
    ```bash
-   pnpm install
+  pnpm install --frozen-lockfile
+  pnpm build
    ```
 
 ### Running the Web GUI
 
-To launch the Next.js development server for the GUI dashboard:
+After compiling the workspace packages, launch the Next.js application:
 
 ```bash
 pnpm dev:gui
 ```
 
 Access the application locally at `http://localhost:3000`.
+
+The Next.js server hosts `@omnia/runtime`, which owns simulation sessions, turn
+execution, provider routing, and simulation persistence. There is no separate
+backend process to start.
+
+When changing code under `packages/`, keep the package compiler running in a
+second terminal while the GUI development server runs:
+
+```bash
+pnpm watch
+```
+
+```bash
+pnpm dev:gui
+```
+
+For a production build, compile the packages before building and starting the
+GUI:
+
+```bash
+pnpm build
+pnpm build:gui
+pnpm --filter @omnia/gui start
+```
+
+### Running with Docker
+
+Build and run the production application with Docker Compose:
+
+```bash
+GOOGLE_API_KEY=your-api-key docker compose up --build
+```
+
+For the bind-mounted development environment, use:
+
+```bash
+GOOGLE_API_KEY=your-api-key docker compose -f docker-compose.dev.yml up --build
+```
+
+In either case, open `http://localhost:3000`. The API key can be omitted when
+providers will be configured through the GUI.
 
 ## Core Architecture
 
@@ -158,11 +200,11 @@ The finish line for the first milestone is small on purpose. `v0` is almost on t
 - [x] Actor Agent with epistemically-bounded prompts (self, memory, co-located entities, subjective time).
 - [x] Verbatim Cognitive Buffer with per-observer subjective serialization and alias resolution.
 - [x] Spatial location graph (data model; perception is co-location only).
-- [x] Scenario loader (JSON → SQLite) and a playable CLI loop with human or LLM actors.
+- [x] Scenario loader (JSON → SQLite) and a runtime-driven simulation loop exposed through the GUI.
 
 **[The `v0` Milestone:](https://github.com/sortedcord/omnia-consolidated/milestone/1)**
 
-- [x] Two hand-authored NPCs live in one location, playable via CLI.
+- [x] Two hand-authored NPCs live in one location and are playable through the GUI.
 - [x] Each has Cognitive Buffer and Memory Ledger memory and recalls something said a few turns earlier.
 - [x] One NPC knows a fact the other does not and, provably by testing, will not leak it.
 - [x] The Architect processes at least one non-trivial action per exchange with a visible state change.
@@ -187,8 +229,9 @@ omnia/
     spatial/     location and POI graph, portal-based perception
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
     scenario/    scenario JSON schema and loader (JSON → SQLite)
+    runtime/     session lifecycle, turn execution, provider routing, and simulation persistence
   apps/
-    gui/         Next.js Web GUI dashboard and simulation runner
+    gui/         Next.js UI and server-action adapter; hosts RuntimeService
   content/
     demo/              bundled scenarios (talking-room)
   tests/

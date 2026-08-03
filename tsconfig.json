@@ -12,6 +12,8 @@
     { "path": "./packages/llm" },
     { "path": "./packages/actor" },
     { "path": "./packages/scenario" },
-    { "path": "./packages/runtime" }
+    { "path": "./packages/runtime" },
+    { "path": "./packages/api-contracts" },
+    { "path": "./packages/api-client" }
   ]
 }

@@ -3,7 +3,9 @@
     "private": true,
     "type": "module",
     "exports": {
-        ".": "./dist/index.js"
+        ".": "./dist/index.js",
+        "./testing": "./dist/testing/index.js",
+        "./internal": "./dist/internal.js"
     },
     "dependencies": {
         "@omnia/actor": "workspace:*",

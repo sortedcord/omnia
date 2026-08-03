@@ -58,7 +58,7 @@ Configurations are stored globally in `data/settings.db` (separated from specifi
 
 ## Task Provider Routing
 
-During a simulation run, the engine executes four distinct LLM operations. To optimize costs, latency, or model accuracy, you can route each of these tasks to different LLM provider instances:
+During a simulation run, the runtime executes five generative operations and one embedding operation. To optimize costs, latency, or model accuracy, you can route each task to a different provider instance:
 
 | Task Name                  | Key ID           | Description                                                                              | Default Model                                  |
 | :------------------------- | :--------------- | :--------------------------------------------------------------------------------------- | :--------------------------------------------- |
@@ -66,6 +66,8 @@ During a simulation run, the engine executes four distinct LLM operations. To op
 | **LLM Validator**          | `llm-validator`  | Arbitrates and validates proposed actions against the world state rules and constraints. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
 | **Intent Decoder**         | `intent-decoder` | Parses and splits free-text actions/prose into structured intent sequences.              | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
 | **TimeDelta Generator**    | `timedelta`      | Calculates the duration of character actions to advance the game clock.                  | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **Memory Handoff Engine**  | `handoff`        | Summarizes Cognitive Buffer entries into the Memory Ledger.                              | Active generative provider                     |
+| **Text Embeddings**        | `embeddings`     | Generates vectors for Memory Ledger retrieval.                                           | Active embedding provider                      |
 
 If no specific provider instance is mapped to a task, the task automatically routes to the globally marked **Active** provider instance.
 
@@ -73,11 +75,12 @@ If no specific provider instance is mapped to a task, the task automatically rou
 
 ## CLI Setup & Seeding
 
-Rather than automatically bootstrapping from environment variables at runtime, which adds runtime complexity, you can quickly seed the database using the CLI setup tool:
+Provider instances can be configured in the GUI or seeded from environment variables with the CLI setup tool. The CLI requires compiled workspace output, so run `pnpm build` first.
 
 ### Seeding All Environment-Variable Providers
 
 ```bash
+pnpm build
 pnpm setup-provider --all
 ```
 
@@ -91,7 +94,7 @@ pnpm setup-provider --provider google-genai --key YOUR_API_KEY [--name "My Gemin
 
 ### Environment Variable Fallback
 
-If the database contains no active provider instances, the LLM providers (e.g. `GeminiProvider`, `OpenAIProvider`, etc.) will fall back directly to reading their keys from environment variables (e.g. `GOOGLE_API_KEY`, `OPENAI_API_KEY`) via `resolveCredentials`.
+When `GOOGLE_API_KEY` is present and no suitable active instance exists, `@omnia/runtime` creates Google generative and embedding fallback instances in `data/settings.db`. Other provider environment variables can be seeded with `pnpm setup-provider --all`.
 
 ---
 

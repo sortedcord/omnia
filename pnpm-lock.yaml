@@ -435,6 +435,21 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/api-client:
+    dependencies:
+      '@omnia/api-contracts':
+        specifier: workspace:*
+        version: link:../api-contracts
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/api-contracts:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/architect:
     dependencies:
       '@omnia/core':

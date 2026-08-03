@@ -1,0 +1,14 @@
+{
+  "name": "@omnia/api-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./v1": "./dist/v1/index.js",
+    "./openapi": "./dist/v1/openapi.js"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

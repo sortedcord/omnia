@@ -17,6 +17,8 @@ export default defineConfig({
       "@omnia/actor": path.resolve(__dirname, "./packages/actor/src"),
       "@omnia/scenario": path.resolve(__dirname, "./packages/scenario/src"),
       "@omnia/runtime": path.resolve(__dirname, "./packages/runtime/src"),
+      "@omnia/api-contracts": path.resolve(__dirname, "./packages/api-contracts/src"),
+      "@omnia/api-client": path.resolve(__dirname, "./packages/api-client/src"),
     },
   },
   test: {

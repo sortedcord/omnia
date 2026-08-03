@@ -23,8 +23,10 @@ COPY packages/core/package.json packages/core/package.json
 COPY packages/intent/package.json packages/intent/package.json
 COPY packages/llm/package.json packages/llm/package.json
 COPY packages/memory/package.json packages/memory/package.json
+COPY packages/runtime/package.json packages/runtime/package.json
 COPY packages/scenario/package.json packages/scenario/package.json
 COPY packages/spatial/package.json packages/spatial/package.json
+COPY packages/voice/package.json packages/voice/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 

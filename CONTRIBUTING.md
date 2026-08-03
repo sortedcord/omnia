@@ -26,27 +26,34 @@ Omnia is organized as a monorepo managed with **pnpm** workspaces.
 ### Prerequisites
 
 - **Node.js** (v22.13 or newer recommended)
-- **pnpm** (v11 or newer recommended)
+- **pnpm** (v11.15.1)
 
 ### Local Setup
 
 1. Fork the repository and clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/omnia-consolidated.git
-   cd omnia-consolidated
+   git clone https://github.com/YOUR_USERNAME/omnia.git
+   cd omnia
    ```
-2. Install dependencies:
+2. Install dependencies and compile the workspace packages:
    ```bash
-   pnpm install
+   pnpm install --frozen-lockfile
+   pnpm build
    ```
 3. Run the Web GUI interface locally:
    ```bash
    pnpm dev:gui
    ```
+   The Next.js server hosts `@omnia/runtime`; no separate backend process is
+   required.
 4. Run the Starlight documentation site locally:
    ```bash
    pnpm dev:docs
    ```
+
+When editing packages, run `pnpm watch` and `pnpm dev:gui` in separate
+terminals. The initial `pnpm build` is still required because workspace package
+exports resolve to compiled files under `dist/`.
 
 ## Development Workflow
 
@@ -72,6 +79,13 @@ pnpm test
 pnpm test:watch
 ```
 
+Before submitting a change, also verify the package and production GUI builds:
+
+```bash
+pnpm build
+pnpm build:gui
+```
+
 ### Linting and Formatting
 
 We enforce consistent code quality and formatting rules across the repository.
@@ -94,6 +108,6 @@ pnpm format
 ## Pull Request Guidelines
 
 1. **Keep PRs Focused**: Keep your changes as small and focused as possible.
-2. **Include Tests**: If you are introducing a new feature or fixing a bug, write corresponding tests in `tests/`.
+2. **Include Tests**: Add package unit tests under `packages/<package>/tests`, or cross-package tests under `tests/integration`, as appropriate.
 3. **Update Documentation**: If your changes alter public behavior or introduce new APIs, update the docs under `web/docs/src/content/docs/`.
 4. **Follow Commit Conventions**: Write clear, descriptive commit messages.
